@@ -1,0 +1,23 @@
+version: "3.9"
+
+services:
+
+  redis-stack:
+    image: redis/redis-stack:6.2.6-v9
+    container_name: redis-stack
+    ports:
+      - 6379:6379
+      - 8001:8001
+    volumes: 
+      - redis-stack:/data
+      - ./local-redis-stack.conf:/redis-stack.conf
+    networks:
+      - nobin_local
+
+volumes:
+  redis-stack:
+
+networks:
+  nobin_local:
+    external:
+      true

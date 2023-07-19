@@ -1,0 +1,26 @@
+version: "3.9"
+
+services:
+  postgresql:
+    image: postgres:15.3-alpine3.18
+    container_name: postgresql
+    ports:
+      - 5432:5432
+    environment:
+      # POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    volumes:
+      - postgresql_data1:/data/postgres
+      - postgresql_data2:/var/lib/postgresql/data
+    networks:
+      - nobin_local
+
+volumes:
+  postgresql_data1:
+  postgresql_data2:
+
+networks:
+  nobin_local:
+    external:
+      true
