@@ -3,7 +3,7 @@ version: "3.9"
 services:
 
   redis-stack:
-    image: redis/redis-stack:6.2.6-v9
+    image: redis/redis-stack:7.2.0-v3
     container_name: redis-stack
     ports:
       - 6379:6379
