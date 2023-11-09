@@ -1,0 +1,24 @@
+version: "3.9"
+
+services:
+  meilisearch:
+    image: getmeili/meilisearch
+    container_name: meilisearch
+    environment:
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
+    volumes:
+      - meili-search:/data.ms
+    ports:
+      - "7700:7700"
+    networks:
+      - nobin_local
+
+
+
+volumes:
+  meili-search:
+
+networks:
+  nobin_local:
+    external:
+      true
