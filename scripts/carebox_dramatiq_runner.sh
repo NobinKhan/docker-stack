@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 
-echo "carebox backend starting from cronjob..."
+echo "carebox dramatiq starting..."
+sleep 10
 cd ~/project/carebox-version1
 source venv/bin/activate
 

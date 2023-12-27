@@ -30,7 +30,7 @@ def is_process_running(command: list = None, name: str = None) -> bool:
             elif name:
                 if proc.name() == name:
                     return True
-            
+
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             return False
     return False
@@ -65,14 +65,33 @@ def run_carebox():
     if carebox_running:
         print("Carebox Project:")
         print("- Carebox project is running.")
-        # subprocess.run(["./scripts/carebox_runner.sh",]) # temp
     else:
         print("- Carebox project is not running")
         print("- Starting Carebox project...")
-        subprocess.run(
-            [
-                "./scripts/carebox_runner.sh",
-            ]
+
+        # Use subprocess.Popen to run the shell command in the background
+        shell_command = "./scripts/carebox_runner.sh"
+        subprocess.Popen(
+            shell_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+
+
+# run code-cli
+def run_code_cli():
+    code_cmdline = ["code", "tunnel"]
+    code_running = is_process_running(code_cmdline)
+
+    if code_running:
+        print("Code cli:")
+        print("- Code cli is running.")
+    else:
+        print("- Code cli is not running")
+        print("- Starting code cli...")
+
+        # Use subprocess.Popen to run the shell command in the background
+        shell_command = "code tunnel >> /home/carebox/logs/code_cli.log 2>&1"
+        subprocess.Popen(
+            shell_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
 
 
@@ -87,28 +106,42 @@ def run_carebox_dramatiq():
     else:
         print("- Carebox dramatiq project is not running")
         print("- Starting Carebox dramatiq project...")
-        subprocess.run(
-            [
-                "./scripts/carebox_dramatiq_runner.sh",
-            ]
+
+        # Use subprocess.Popen to run the shell command in the background
+        shell_command = "./scripts/carebox_dramatiq_runner.sh"
+        subprocess.Popen(
+            shell_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
 
 
 # kill carebox django project
 def kill_carebox():
     carebox_cmdline = ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+    carebox_cmdline_full = [
+        "/home/carebox/project/carebox-version1/venv/bin/python",
+        "manage.py",
+        "runserver",
+        "0.0.0.0:8000",
+    ]
     carebox_running = is_process_running(carebox_cmdline)
+    if not carebox_running:
+        carebox_running = is_process_running(carebox_cmdline_full)
 
     if carebox_running:
+        is_stopped = False
         for proc in psutil.process_iter(["name", "cmdline"]):
             try:
                 if proc.cmdline() == carebox_cmdline:
                     proc.kill()
                     print("- Carebox django project stopped")
-                    return True
+                    is_stopped = True
+                if proc.cmdline() == carebox_cmdline_full:
+                    proc.kill()
+                    print("- Carebox django project stopped")
+                    is_stopped = True
             except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-                return False
-        return False
+                is_stopped = False
+        return is_stopped
     else:
         print("- Carebox django project not running.")
 
@@ -190,6 +223,8 @@ def main():
         kill_carebox()
         kill_carebox_dramatiq()
 
+    # code cli runner
+    run_code_cli()
     print("\n***** END *****\n")
 
 

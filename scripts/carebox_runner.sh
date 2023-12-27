@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 
 echo "carebox backend starting..."
+sleep 5
 cd ~/project/carebox-version1
 source venv/bin/activate
 
