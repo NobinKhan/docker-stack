@@ -11,13 +11,13 @@ services:
     volumes: 
       - redis-stack:/data
       - ./local-redis-stack.conf:/redis-stack.conf
-    networks:
-      - nobin_local
+    # networks:
+    #   - nobin_local
 
 volumes:
   redis-stack:
 
-networks:
-  nobin_local:
-    external:
-      true
+# networks:
+#   nobin_local:
+#     external:
+#       true
