@@ -168,7 +168,8 @@ def kill_carebox_dramatiq():
 
 def main():
     present_time = datetime.now()
-    print(f"Script running at - {present_time.strftime("%I:%M %p - %d %b %Y")}")
+    print("\n\n***** START *****")
+    print(f"Script running at - {present_time.strftime("%I:%M %p - %d %b %Y")}\n")
 
     # Define working hours range and non-working day
     working_start = time(8, 45)
