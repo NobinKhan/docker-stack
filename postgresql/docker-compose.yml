@@ -13,14 +13,14 @@ services:
     volumes:
       - postgresql_data1:/data/postgres
       - postgresql_data2:/var/lib/postgresql/data
-    networks:
-      - nobin_local
+#     networks:
+#       - nobin_local
 
 volumes:
   postgresql_data1:
   postgresql_data2:
 
-networks:
-  nobin_local:
-    external:
-      true
+# networks:
+#   nobin_local:
+#     external:
+#       true

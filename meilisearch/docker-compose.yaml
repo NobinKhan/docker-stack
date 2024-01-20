@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   meilisearch:
-    image: getmeili/meilisearch
+    image: getmeili/meilisearch:v1.5.1
     container_name: meilisearch
     environment:
       MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
