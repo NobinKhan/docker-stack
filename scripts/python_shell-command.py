@@ -59,7 +59,7 @@ def is_working_hour(
 
 # run carebox django project
 def run_carebox():
-    carebox_cmdline = ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+    carebox_cmdline = ["./docker/dev.sh"]
     carebox_running = is_process_running(carebox_cmdline)
 
     if carebox_running:
@@ -170,7 +170,7 @@ def main():
     present_time = datetime.now()
     print("\n\n***** START *****")
     print(f"Script running at - {present_time.strftime("%I:%M %p - %d %b %Y")}\n")
-
+    sleep(20)
     # Define working hours range and non-working day
     working_start = time(8, 45)
     working_end = time(17, 15)
