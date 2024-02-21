@@ -14,22 +14,20 @@ fi
 # Build docker image (corrected Dockerfile path and quoting)
 RUNNER=$(command -v podman || command -v docker)  # Use whichever is available
 
-CONTAINER_IMAGE="dpage/pgadmin4:latest"
-CONTAINER_NAME="pgadmin"
-CONTAINER_PORT="80"
-HOST_PORT="5050"
+CONTAINER_IMAGE="getmeili/meilisearch:latest"
+CONTAINER_NAME="meilisearch"
+CONTAINER_PORT="7700"
+HOST_PORT="7700"
 
 $RUNNER pull $CONTAINER_IMAGE
 $RUNNER kill $CONTAINER_NAME && $RUNNER rm $CONTAINER_NAME
-
 CONTAINER_ID=$($RUNNER run \
   --rm \
   --detach \
   --name $CONTAINER_NAME \
   --publish $HOST_PORT:$CONTAINER_PORT \
-  --env PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL} \
-  --env PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD} \
-  --volume pgadmin_data:/var/lib/pgadmin \
+  --env MEILI_MASTER_KEY=${MEILI_MASTER_KEY} \
+  --volume meili-search:/data.ms \
   $CONTAINER_IMAGE)
 
 # Check if the container started successfully

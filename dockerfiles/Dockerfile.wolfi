@@ -1,0 +1,80 @@
+FROM cgr.dev/chainguard/wolfi-base as base-layer
+
+ENV PYTHON_VERSION=3.12 \
+    APP_USER=nonroot \
+	PYTHONUNBUFFERED=1 \
+	PYTHONDONTWRITEBYTECODE=1 \
+    POETRY_NO_INTERACTION=1 \
+    POETRY_VIRTUALENVS_IN_PROJECT=1 \
+    POETRY_VIRTUALENVS_CREATE=1 \
+    POETRY_CACHE_DIR=/tmp/poetry_cache
+WORKDIR /home/${APP_USER}
+COPY --chown=${APP_USER}:${APP_USER} --chmod=775 pyproject.toml poetry.lock README.md /home/${APP_USER}/
+RUN set -eux ;\
+    apk update ;\
+    apk upgrade ;\
+    apk add python-${PYTHON_VERSION} py3-poetry openssl python3-dev build-base rsync supercronic ;
+
+USER ${APP_USER}
+COPY --chown=${APP_USER}:${APP_USER} --chmod=775 ./ /home/${APP_USER}/temp_src/
+RUN set -eux; \
+    poetry install --without dev --no-root ;\
+    rm -rf $POETRY_CACHE_DIR pyproject.toml poetry.lock README.md ;\
+    rsync -rav /home/${APP_USER}/temp_src/ /home/${APP_USER}/project/ \
+    --exclude=".git" \
+    --exclude=".gitignore" \
+    --exclude=".gitlab-ci.yml" \
+    --exclude=".vscode" \
+    --exclude="Pipfile" \
+    --exclude="poetry.lock" \
+    --exclude="post.deploy.sh" \
+    --exclude="temp.py" \
+    --exclude="pyproject.toml" \
+    --exclude="query.py" \
+    --exclude="README.md" \
+    --exclude="run_checks.sh" \
+    --exclude="script.sh" \
+    --exclude=".Dockerignore" \
+    --exclude="Dockerfile" \
+    --exclude="docker-compose.yml" \
+    --exclude="docker-entrypoint.sh" \
+    --exclude="docker/" \
+    --exclude="media/" \
+    --exclude="static/" \
+    --exclude="staticfiles/" \
+    --exclude="temp_copy/" \
+    --exclude="venv/" \
+    --exclude="__pycache__";
+
+
+FROM cgr.dev/chainguard/wolfi-base as final
+
+ENV APP_USER=nonroot \
+    UID=1000 \
+    GID=1000
+ENV PYTHON_VERSION=3.12 \
+	PYTHONUNBUFFERED=1 \
+	PYTHONDONTWRITEBYTECODE=1 \
+    VIRTUAL_ENV=/home/${APP_USER}/.venv \
+    PATH="/home/${APP_USER}/.venv/bin:$PATH"
+COPY --from=base-layer /usr/bin/supercronic /usr/bin/supercronic
+RUN set -eux ;\
+    apk update --no-cache ;\
+    apk upgrade --no-cache ;\
+    apk add --no-cache python-${PYTHON_VERSION} ;
+
+USER ${APP_USER}
+EXPOSE 8000 8001
+WORKDIR /home/${APP_USER}/project/
+COPY --from=base-layer --chown=${UID}:${GID} --chmod=775 ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+COPY --from=base-layer --chown=${UID}:${GID} --chmod=775 /home/${APP_USER}/project/ /home/${APP_USER}/project/
+RUN (echo "58 5 * * * sh -c /home/${APP_USER}/project/scripts/daily_check.sh") >> /home/${APP_USER}/crontab
+
+ENTRYPOINT ["sh", "-c", "python manage.py collectstatic --no-input &&\
+    python manage.py migrate &&\
+    gunicorn EcommerceProject.wsgi:application --bind 0.0.0.0:8000 -w 4 --timeout 3600 &\
+    daphne EcommerceProject.asgi:application --bind 0.0.0.0 --port 8001 &\
+    python manage.py rundramatiq &\
+    python scripts/meili_index.py &\
+    supercronic /home/nonroot/crontab \
+"]

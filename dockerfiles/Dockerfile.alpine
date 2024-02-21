@@ -1,0 +1,69 @@
+# Stage 1: Base setup & Fix bugs
+FROM python:3.12.2-alpine3.19 as base-layer
+ENV UID=1000 \
+    GID=1000 \
+    APP_USER=nonroot \
+	PYTHONUNBUFFERED=1 \
+	PYTHONDONTWRITEBYTECODE=1
+EXPOSE 8000 8001
+WORKDIR /home/${APP_USER}
+RUN set -eux; \
+    apk upgrade --no-cache; \
+    pip install --no-cache --upgrade pip setuptools wheel psycopg-binary;
+
+
+# Stage 2: Build the dependencies
+FROM base-layer as build-layer
+COPY requirements.txt /home/${APP_USER}/requirements.txt
+RUN set -eux; \
+	apk add --no-cache --virtual .build-deps \
+		rsync \
+        gcc \
+		g++ \
+		libpq-dev \
+		apache-arrow-dev \
+		cairo-dev \
+		cmake \
+		make; \
+    pip wheel --no-cache -r /home/${APP_USER}/requirements.txt -w wheelhouse;
+COPY ./ /home/${APP_USER}/temp_src/
+RUN set -eux; \
+    rsync -rav /home/${APP_USER}/temp_src/ /home/${APP_USER}/project/ \
+    --exclude=".git" \
+    --exclude=".gitignore" \
+    --exclude=".gitlab-ci.yml" \
+    --exclude=".vscode" \
+    --exclude="Pipfile" \
+    --exclude="poetry.lock" \
+    --exclude="post.deploy.sh" \
+    --exclude="temp.py" \
+    --exclude="pyproject.toml" \
+    --exclude="query.py" \
+    --exclude="README.md" \
+    --exclude="run_checks.sh" \
+    --exclude="script.sh" \
+    --exclude=".Dockerignore" \
+    --exclude="Dockerfile" \
+    --exclude="docker-compose.yml" \
+    --exclude="docker-entrypoint.sh" \
+    --exclude="docker/" \
+    --exclude="media/" \
+    --exclude="static/" \
+    --exclude="staticfiles/" \
+    --exclude="temp_copy/" \
+    --exclude="venv/" \
+    --exclude="__pycache__";\
+    rm -rf /home/${APP_USER}/temp_src ;
+
+
+# Stage 3: Final image
+FROM base-layer as final-image
+COPY --from=build-layer /home/${APP_USER}/wheelhouse /home/${APP_USER}/wheelhouse
+COPY --from=build-layer /home/${APP_USER}/project /home/${APP_USER}/project
+COPY docker/entrypoint.sh /home/${APP_USER}/entrypoint.sh
+RUN set -eux; \
+    pip install --no-cache --no-index --no-warn-script-location --find-links=/home/${APP_USER}/wheelhouse -r /home/${APP_USER}/project/requirements.txt; \
+    rm -rf wheelhouse; \
+	(crontab -l 2>/dev/null || true; echo "58 5 * * * sh -c /home/nonroot/project/scripts/daily_check.sh") | crontab -
+
+ENTRYPOINT [ "./entrypoint.sh" ]

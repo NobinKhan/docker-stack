@@ -14,22 +14,21 @@ fi
 # Build docker image (corrected Dockerfile path and quoting)
 RUNNER=$(command -v podman || command -v docker)  # Use whichever is available
 
-CONTAINER_IMAGE="dpage/pgadmin4:latest"
-CONTAINER_NAME="pgadmin"
-CONTAINER_PORT="80"
-HOST_PORT="5050"
+CONTAINER_IMAGE="redis/redis-stack:7.2.0-v6"
+CONTAINER_NAME="redis_stack"
+CONTAINER_PORT="6379"
+HOST_PORT="6379"
 
 $RUNNER pull $CONTAINER_IMAGE
 $RUNNER kill $CONTAINER_NAME && $RUNNER rm $CONTAINER_NAME
-
 CONTAINER_ID=$($RUNNER run \
   --rm \
   --detach \
   --name $CONTAINER_NAME \
   --publish $HOST_PORT:$CONTAINER_PORT \
-  --env PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL} \
-  --env PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD} \
-  --volume pgadmin_data:/var/lib/pgadmin \
+  --publish 6370:8001 \
+  --env MEILI_MASTER_KEY=${MEILI_MASTER_KEY} \
+  --volume redis-stack:/data \
   $CONTAINER_IMAGE)
 
 # Check if the container started successfully
