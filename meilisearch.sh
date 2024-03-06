@@ -22,6 +22,7 @@ HOST_PORT="7700"
 $RUNNER pull $CONTAINER_IMAGE
 $RUNNER kill $CONTAINER_NAME && $RUNNER rm $CONTAINER_NAME
 CONTAINER_ID=$($RUNNER run \
+  --network=kong-net \
   --rm \
   --detach \
   --name $CONTAINER_NAME \
