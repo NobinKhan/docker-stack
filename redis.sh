@@ -14,7 +14,7 @@ fi
 # Build docker image (corrected Dockerfile path and quoting)
 RUNNER=$(command -v podman || command -v docker)  # Use whichever is available
 
-CONTAINER_IMAGE="redis/redis-stack:7.2.0-v8"
+CONTAINER_IMAGE="redis/redis-stack:7.2.0-v9"
 CONTAINER_NAME="redis_stack"
 CONTAINER_PORT="6379"
 HOST_PORT="6379"
