@@ -1,0 +1,128 @@
+FROM python:3.12.2-bookworm as base-layer
+
+ENV APP_USER=nonroot \
+    UID=1000 \
+    GID=1000 \
+	PYTHONUNBUFFERED=1 \
+	PYTHONDONTWRITEBYTECODE=1 \
+    POETRY_NO_INTERACTION=1 \
+    POETRY_VIRTUALENVS_IN_PROJECT=1 \
+    POETRY_VIRTUALENVS_CREATE=1 \
+    POETRY_CACHE_DIR=/tmp/poetry_cache \
+    SUPERCRONIC_URL=https://github.com/aptible/supercronic/releases/download/v0.2.29/supercronic-linux-amd64 \
+    SUPERCRONIC=supercronic-linux-amd64 \
+    SUPERCRONIC_SHA1SUM=cd48d45c4b10f3f0bfdd3a57d054cd05ac96812b
+
+RUN set -eux ;\
+    apt-get update && apt-get upgrade -y ;\
+    apt-get install -y --no-install-recommends ;\
+    curl -fsSLO "$SUPERCRONIC_URL" \
+    && echo "${SUPERCRONIC_SHA1SUM}  ${SUPERCRONIC}" | sha1sum -c - \
+    && chmod +x "$SUPERCRONIC" \
+    && mv "$SUPERCRONIC" "/usr/local/bin/supercronic" ;\
+    rm -rf /var/lib/apt/lists/* ;\
+    groupadd -g ${GID} ${APP_USER} && \
+    useradd -u ${UID} -g ${GID} -m ${APP_USER} ;
+
+USER ${APP_USER}
+WORKDIR /home/${APP_USER}
+
+COPY --chown=${UID}:${GID} --chmod=775 Contribution /home/${APP_USER}/project/Contribution
+COPY --chown=${UID}:${GID} --chmod=775 DeliveryTeam /home/${APP_USER}/project/DeliveryTeam
+COPY --chown=${UID}:${GID} --chmod=775 Doctor_Career /home/${APP_USER}/project/Doctor_Career
+COPY --chown=${UID}:${GID} --chmod=775 Doctor_appointment /home/${APP_USER}/project/Doctor_appointment
+COPY --chown=${UID}:${GID} --chmod=775 EcommerceProject /home/${APP_USER}/project/EcommerceProject
+COPY --chown=${UID}:${GID} --chmod=775 Online_Doctor_Booking /home/${APP_USER}/project/Online_Doctor_Booking
+COPY --chown=${UID}:${GID} --chmod=775 Patient /home/${APP_USER}/project/Patient
+COPY --chown=${UID}:${GID} --chmod=775 Wishlist /home/${APP_USER}/project/Wishlist
+COPY --chown=${UID}:${GID} --chmod=775 ambulance /home/${APP_USER}/project/ambulance
+COPY --chown=${UID}:${GID} --chmod=775 biography /home/${APP_USER}/project/biography
+COPY --chown=${UID}:${GID} --chmod=775 careboxQuiz /home/${APP_USER}/project/careboxQuiz
+COPY --chown=${UID}:${GID} --chmod=775 career /home/${APP_USER}/project/career
+COPY --chown=${UID}:${GID} --chmod=775 dashboard /home/${APP_USER}/project/dashboard
+COPY --chown=${UID}:${GID} --chmod=775 delete /home/${APP_USER}/project/delete
+COPY --chown=${UID}:${GID} --chmod=775 emails /home/${APP_USER}/project/emails
+COPY --chown=${UID}:${GID} --chmod=775 feedback /home/${APP_USER}/project/feedback
+COPY --chown=${UID}:${GID} --chmod=775 functions /home/${APP_USER}/project/functions
+COPY --chown=${UID}:${GID} --chmod=775 header_content /home/${APP_USER}/project/header_content
+COPY --chown=${UID}:${GID} --chmod=775 inventory /home/${APP_USER}/project/inventory
+COPY --chown=${UID}:${GID} --chmod=775 live_doctor /home/${APP_USER}/project/live_doctor
+COPY --chown=${UID}:${GID} --chmod=775 marketing /home/${APP_USER}/project/marketing
+COPY --chown=${UID}:${GID} --chmod=775 notification /home/${APP_USER}/project/notification
+COPY --chown=${UID}:${GID} --chmod=775 pathology /home/${APP_USER}/project/pathology
+COPY --chown=${UID}:${GID} --chmod=775 payment /home/${APP_USER}/project/payment
+COPY --chown=${UID}:${GID} --chmod=775 pharmacist /home/${APP_USER}/project/pharmacist
+COPY --chown=${UID}:${GID} --chmod=775 physio_care /home/${APP_USER}/project/physio_care
+COPY --chown=${UID}:${GID} --chmod=775 pos /home/${APP_USER}/project/pos
+COPY --chown=${UID}:${GID} --chmod=775 product /home/${APP_USER}/project/product
+COPY --chown=${UID}:${GID} --chmod=775 refund /home/${APP_USER}/project/refund
+COPY --chown=${UID}:${GID} --chmod=775 report /home/${APP_USER}/project/report
+COPY --chown=${UID}:${GID} --chmod=775 sales_dash /home/${APP_USER}/project/sales_dash
+COPY --chown=${UID}:${GID} --chmod=775 scripts /home/${APP_USER}/project/scripts
+COPY --chown=${UID}:${GID} --chmod=775 slider_image /home/${APP_USER}/project/slider_image
+COPY --chown=${UID}:${GID} --chmod=775 templates /home/${APP_USER}/project/templates
+COPY --chown=${UID}:${GID} --chmod=775 upload_prescription_api /home/${APP_USER}/project/upload_prescription_api
+COPY --chown=${UID}:${GID} --chmod=775 user_api /home/${APP_USER}/project/user_api
+COPY --chown=${UID}:${GID} --chmod=775 utils /home/${APP_USER}/project/utils
+COPY --chown=${UID}:${GID} --chmod=775 vendor_order /home/${APP_USER}/project/vendor_order
+COPY --chown=${UID}:${GID} --chmod=775 warehouse /home/${APP_USER}/project/warehouse
+COPY --chown=${UID}:${GID} --chmod=775 manage.py /home/${APP_USER}/project/manage.py
+COPY --chown=${UID}:${GID} --chmod=775 pyproject.toml poetry.lock README.md /home/${APP_USER}/
+
+RUN set -eux ;\
+    pip install --no-cache --upgrade pip setuptools ;\
+    curl -sSL https://install.python-poetry.org | python3 - ;\
+    export PATH="/home/${APP_USER}/.local/bin:$PATH" ;\
+    find . -type d -name '__pycache__' -exec rm -rf {} + ;\
+    poetry update && poetry install --without dev --no-root ;\
+    rm -rf $POETRY_CACHE_DIR pyproject.toml poetry.lock README.md ;
+
+
+FROM python:3.12.2-bookworm as final
+
+ENV APP_USER=nonroot \
+    UID=1000 \
+    GID=1000
+
+ENV PYTHON_VERSION=3.12 \
+	PYTHONUNBUFFERED=1 \
+	PYTHONDONTWRITEBYTECODE=1 \
+    VIRTUAL_ENV=/home/${APP_USER}/.venv \
+    PATH="/home/${APP_USER}/.venv/bin:$PATH"
+
+COPY --from=base-layer \
+    /usr/local/bin/supercronic \
+    /usr/local/bin/supercronic
+
+RUN set -eux ;\
+    apt-get update && apt-get upgrade -y ;\
+    pip install --no-cache --upgrade pip setuptools ;\
+    rm -rf /var/lib/apt/lists/* ;\
+    groupadd -g ${GID} ${APP_USER} && \
+    useradd -u ${UID} -g ${GID} -m ${APP_USER} ;
+
+USER ${APP_USER}
+EXPOSE 8000 8001
+WORKDIR /home/${APP_USER}/project/
+
+COPY --from=base-layer --chown=${UID}:${GID} --chmod=775 \
+    ${VIRTUAL_ENV} \
+    ${VIRTUAL_ENV}
+COPY --from=base-layer --chown=${UID}:${GID} --chmod=775 \
+    /home/${APP_USER}/project/ \
+    /home/${APP_USER}/project/
+COPY --chown=${UID}:${GID} --chmod=775 \
+    ./docker/stage.env \
+    /home/${APP_USER}/project/.env
+
+RUN (echo "58 5 * * * bash -c /home/${APP_USER}/project/scripts/daily_check.sh") >> \
+    /home/${APP_USER}/crontab
+
+ENTRYPOINT ["bash", "-c", "python manage.py collectstatic --no-input &&\
+    python manage.py migrate &&\
+    gunicorn EcommerceProject.wsgi:application --bind 0.0.0.0:8000 -w 4 --timeout 3600 &\
+    daphne EcommerceProject.asgi:application --bind 0.0.0.0 --port 8001 &\
+    python manage.py rundramatiq &\
+    python scripts/meili_index.py &\
+    supercronic /home/nonroot/crontab \
+"]

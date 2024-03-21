@@ -18,7 +18,7 @@ RUN set -eux ;\
 USER ${APP_USER}
 COPY --chown=${APP_USER}:${APP_USER} --chmod=775 ./ /home/${APP_USER}/temp_src/
 RUN set -eux; \
-    poetry install --without dev --no-root ;\
+    poetry update && poetry install --without dev --no-root ;\
     rm -rf $POETRY_CACHE_DIR pyproject.toml poetry.lock README.md ;\
     rsync -rav /home/${APP_USER}/temp_src/ /home/${APP_USER}/project/ \
     --exclude=".git" \
@@ -61,16 +61,17 @@ COPY --from=base-layer /usr/bin/supercronic /usr/bin/supercronic
 RUN set -eux ;\
     apk update --no-cache ;\
     apk upgrade --no-cache ;\
-    apk add --no-cache python-${PYTHON_VERSION} ;
+    apk add --no-cache python-${PYTHON_VERSION} bash ;
 
 USER ${APP_USER}
 EXPOSE 8000 8001
 WORKDIR /home/${APP_USER}/project/
 COPY --from=base-layer --chown=${UID}:${GID} --chmod=775 ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY --from=base-layer --chown=${UID}:${GID} --chmod=775 /home/${APP_USER}/project/ /home/${APP_USER}/project/
-RUN (echo "58 5 * * * sh -c /home/${APP_USER}/project/scripts/daily_check.sh") >> /home/${APP_USER}/crontab
+# COPY --chown=${UID}:${GID} --chmod=775 ./docker/stage.env /home/${APP_USER}/project/.env
+RUN (echo "58 5 * * * bash -c /home/${APP_USER}/project/scripts/daily_check.sh") >> /home/${APP_USER}/crontab
 
-ENTRYPOINT ["sh", "-c", "python manage.py collectstatic --no-input &&\
+ENTRYPOINT ["bash", "-c", "python manage.py collectstatic --no-input &&\
     python manage.py migrate &&\
     gunicorn EcommerceProject.wsgi:application --bind 0.0.0.0:8000 -w 4 --timeout 3600 &\
     daphne EcommerceProject.asgi:application --bind 0.0.0.0 --port 8001 &\
