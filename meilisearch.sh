@@ -14,7 +14,7 @@ fi
 # Build docker image (corrected Dockerfile path and quoting)
 RUNNER=$(command -v podman || command -v docker)  # Use whichever is available
 
-CONTAINER_IMAGE="getmeili/meilisearch:v1.7.2"
+CONTAINER_IMAGE="getmeili/meilisearch:v1.7.3"
 CONTAINER_NAME="meilisearch"
 CONTAINER_PORT="7700"
 HOST_PORT="7700"
@@ -22,7 +22,6 @@ HOST_PORT="7700"
 $RUNNER pull $CONTAINER_IMAGE
 $RUNNER kill $CONTAINER_NAME && $RUNNER rm $CONTAINER_NAME
 CONTAINER_ID=$($RUNNER run \
-  --network=kong-net \
   --rm \
   --detach \
   --name $CONTAINER_NAME \
