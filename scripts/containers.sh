@@ -122,8 +122,8 @@ else
   echo "Error starting container $CONTAINER_NAME!"
 fi
 
-$RUNNER cp ./scripts/.env carebox:/home/nonroot/project/.env
-$RUNNER kill $CONTAINER_NAME
-sleep 10
+# $RUNNER cp ./scripts/.env carebox:/home/nonroot/project/.env
+# $RUNNER kill $CONTAINER_NAME
+# sleep 10
 
-$RUNNER start $CONTAINER_NAME
+# $RUNNER start $CONTAINER_NAME
