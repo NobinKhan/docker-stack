@@ -20,7 +20,20 @@ CONTAINER_PORT="6379"
 HOST_PORT="6379"
 
 $RUNNER pull $CONTAINER_IMAGE
-$RUNNER kill $CONTAINER_NAME && $RUNNER rm $CONTAINER_NAME
+
+CONTAINER_STATE=$("$RUNNER" inspect -f '{{.State.Status}}' "$CONTAINER_NAME")
+
+if [[ "$CONTAINER_STATE" == "running" ]]; then
+  # Kill the container if running
+  $RUNNER kill "$CONTAINER_NAME" && $RUNNER rm "$CONTAINER_NAME"
+  echo "Container $CONTAINER_NAME stopped & removed."
+
+elif [[ "$CONTAINER_STATE" == "created" ]]; then
+  # Remove the container if created
+  $RUNNER rm "$CONTAINER_NAME"
+  echo "Container $CONTAINER_NAME removed."
+fi
+
 CONTAINER_ID=$($RUNNER run \
   --rm \
   --detach \
