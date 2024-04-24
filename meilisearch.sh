@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e  # Exit on error
+# set -e  # Exit on error
 
 # Load environment variables
 source .env
@@ -21,8 +21,12 @@ HOST_PORT="7700"
 
 $RUNNER pull $CONTAINER_IMAGE
 
-CONTAINER_STATE=$("$RUNNER" inspect -f '{{.State.Status}}' "$CONTAINER_NAME")
+CONTAINER_INSPECT=$("$RUNNER" inspect "$CONTAINER_NAME" 2>&1)
+if [[ $? -ne 0 ]]; then
+  echo "Container $CONTAINER_NAME not found."
+fi
 
+CONTAINER_STATE=$(echo "$CONTAINER_INSPECT" | jq -r '.[].State.Status' 2>&1)
 if [[ "$CONTAINER_STATE" == "running" ]]; then
   # Kill the container if running
   $RUNNER kill "$CONTAINER_NAME" && $RUNNER rm "$CONTAINER_NAME"
@@ -32,6 +36,13 @@ elif [[ "$CONTAINER_STATE" == "created" ]]; then
   # Remove the container if created
   $RUNNER rm "$CONTAINER_NAME"
   echo "Container $CONTAINER_NAME removed."
+
+fi
+
+CONTAINER_STATE=$(echo "$CONTAINER_INSPECT" | jq -r '.[].Name' 2>&1)
+if [[ $CONTAINER_STATE == "$CONTAINER_NAME""_data" ]]; then
+  echo "Container $CONTAINER_NAME Was Removed."
+
 fi
 
 CONTAINER_ID=$($RUNNER run \
