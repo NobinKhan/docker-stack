@@ -14,7 +14,7 @@ fi
 # Build docker image (corrected Dockerfile path and quoting)
 RUNNER=$(command -v podman || command -v docker)  # Use whichever is available
 
-CONTAINER_IMAGE="dpage/pgadmin4:8.5"
+CONTAINER_IMAGE="dpage/pgadmin4:8.6"
 CONTAINER_NAME="pgadmin"
 CONTAINER_PORT="80"
 HOST_PORT="5050"
