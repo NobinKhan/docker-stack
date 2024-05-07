@@ -23,20 +23,26 @@ $RUNNER pull $CONTAINER_IMAGE
 
 CONTAINER_INSPECT=$("$RUNNER" inspect "$CONTAINER_NAME" 2>&1)
 if [[ $? -ne 0 ]]; then
-  echo "Container $CONTAINER_NAME not found."
-fi
+  echo "Container "$CONTAINER_NAME" not found."
+else
+  CONTAINER_STATE=$(echo "$CONTAINER_INSPECT" | jq -r '.[].State.Status' 2>&1)
 
-CONTAINER_STATE=$(echo "$CONTAINER_INSPECT" | jq -r '.[].State.Status'2>&1)
-if [[ "$CONTAINER_STATE" == "running" ]]; then
-  # Kill the container if running
-  $RUNNER kill "$CONTAINER_NAME" && $RUNNER rm "$CONTAINER_NAME"
-  echo "Container $CONTAINER_NAME stopped & removed."
+  if [ "$CONTAINER_STATE" = "null" ]; then
+    echo "Failed to retrieve container status."
 
-elif [[ "$CONTAINER_STATE" == "created" ]]; then
-  # Remove the container if created
-  $RUNNER rm "$CONTAINER_NAME"
-  echo "Container $CONTAINER_NAME removed."
+  elif [[ "$CONTAINER_STATE" == "running" ]]; then
+    # Kill the container if running
+    $RUNNER kill "$CONTAINER_NAME" && $RUNNER rm "$CONTAINER_NAME"
+    echo "Container $CONTAINER_NAME stopped & removed."
 
+  elif [[ "$CONTAINER_STATE" == "created" ]]; then
+    # Remove the container if created
+    $RUNNER rm "$CONTAINER_NAME"
+    echo "Container $CONTAINER_NAME removed."
+
+  else
+    echo "Container "$CONTAINER_NAME" status: $CONTAINER_STATE"
+  fi
 fi
 
 CONTAINER_STATE=$(echo "$CONTAINER_INSPECT" | jq -r '.[].Name' 2>&1)
