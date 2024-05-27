@@ -14,13 +14,15 @@ fi
 # Build docker image (corrected Dockerfile path and quoting)
 RUNNER=$(command -v podman || command -v docker)  # Use whichever is available
 
-CONTAINER_IMAGE="redis/redis-stack:7.2.0-v10"
-CONTAINER_NAME="redis_stack"
+CONTAINER_IMAGE="chainguard/redis:latest"
+CONTAINER_NAME="redis"
 CONTAINER_PORT="6379"
 HOST_PORT="6379"
+NETWORK_NAME="Project_Network"
 
 $RUNNER pull $CONTAINER_IMAGE
 
+# Check if the container exists
 CONTAINER_INSPECT=$("$RUNNER" inspect "$CONTAINER_NAME" 2>&1)
 if [[ $? -ne 0 ]]; then
   echo "Container "$CONTAINER_NAME" not found."
@@ -45,14 +47,21 @@ else
   fi
 fi
 
-CONTAINER_STATE=$(echo "$CONTAINER_INSPECT" | jq -r '.[].Name' 2>&1)
-if [[ $CONTAINER_STATE == "$CONTAINER_NAME""_data" ]]; then
-  echo "Container $CONTAINER_NAME Was Removed."
+# Check if network exists
+NETWORK_INSPECT=$("$RUNNER" network inspect "$NETWORK_NAME" 2>&1)
+if [[ $? -ne 0 ]]; then
+  echo "Network "$NETWORK_NAME" not found."
+  echo "Creating network..."
+  $RUNNER network create "$NETWORK_NAME"
+else
+  echo "Network "$NETWORK_NAME" found."
 fi
 
+# Start the container
 CONTAINER_ID=$($RUNNER run \
   --rm \
   --detach \
+  --network $NETWORK_NAME \
   --name $CONTAINER_NAME \
   --publish $HOST_PORT:$CONTAINER_PORT \
   --publish 6370:8001 \

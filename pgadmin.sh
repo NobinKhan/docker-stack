@@ -18,36 +18,50 @@ CONTAINER_IMAGE="dpage/pgadmin4:8.6"
 CONTAINER_NAME="pgadmin"
 CONTAINER_PORT="80"
 HOST_PORT="5050"
+NETWORK_NAME="Project_Network"
 
 $RUNNER pull $CONTAINER_IMAGE
 
+# Check if the container exists
 CONTAINER_INSPECT=$("$RUNNER" inspect "$CONTAINER_NAME" 2>&1)
 if [[ $? -ne 0 ]]; then
-  echo "Container $CONTAINER_NAME not found."
+  echo "Container "$CONTAINER_NAME" not found."
+else
+  CONTAINER_STATE=$(echo "$CONTAINER_INSPECT" | jq -r '.[].State.Status' 2>&1)
+
+  if [ "$CONTAINER_STATE" = "null" ]; then
+    echo "Failed to retrieve container status."
+
+  elif [[ "$CONTAINER_STATE" == "running" ]]; then
+    # Kill the container if running
+    $RUNNER kill "$CONTAINER_NAME" && $RUNNER rm "$CONTAINER_NAME"
+    echo "Container $CONTAINER_NAME stopped & removed."
+
+  elif [[ "$CONTAINER_STATE" == "created" ]]; then
+    # Remove the container if created
+    $RUNNER rm "$CONTAINER_NAME"
+    echo "Container $CONTAINER_NAME removed."
+
+  else
+    echo "Container "$CONTAINER_NAME" status: $CONTAINER_STATE"
+  fi
 fi
 
-CONTAINER_STATE=$(echo "$CONTAINER_INSPECT" | jq -r '.[].State.Status' 2>&1)
-if [[ "$CONTAINER_STATE" == "running" ]]; then
-  # Kill the container if running
-  $RUNNER kill "$CONTAINER_NAME" && $RUNNER rm "$CONTAINER_NAME"
-  echo "Container $CONTAINER_NAME stopped & removed."
-
-elif [[ "$CONTAINER_STATE" == "created" ]]; then
-  # Remove the container if created
-  $RUNNER rm "$CONTAINER_NAME"
-  echo "Container $CONTAINER_NAME removed."
-
+# Check if network exists
+NETWORK_INSPECT=$("$RUNNER" network inspect "$NETWORK_NAME" 2>&1)
+if [[ $? -ne 0 ]]; then
+  echo "Network "$NETWORK_NAME" not found."
+  echo "Creating network..."
+  $RUNNER network create "$NETWORK_NAME"
+else
+  echo "Network "$NETWORK_NAME" found."
 fi
 
-CONTAINER_STATE=$(echo "$CONTAINER_INSPECT" | jq -r '.[].Name' 2>&1)
-if [[ $CONTAINER_STATE == "$CONTAINER_NAME""_data" ]]; then
-  echo "Container $CONTAINER_NAME Was Removed."
-
-fi
-
+# Start the container
 CONTAINER_ID=$($RUNNER run \
   --rm \
   --detach \
+  --network $NETWORK_NAME \
   --name $CONTAINER_NAME \
   --publish $HOST_PORT:$CONTAINER_PORT \
   --env PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL} \

@@ -14,10 +14,10 @@ fi
 # Build docker image (corrected Dockerfile path and quoting)
 RUNNER=$(command -v podman || command -v docker)  # Use whichever is available
 
-CONTAINER_IMAGE="getmeili/meilisearch:v1.8.0"
-CONTAINER_NAME="meilisearch"
-CONTAINER_PORT="7700"
-HOST_PORT="7700"
+CONTAINER_IMAGE="chainguard/dragonfly:latest"
+CONTAINER_NAME="dragonfly"
+CONTAINER_PORT="6379"
+HOST_PORT="6379"
 NETWORK_NAME="Project_Network"
 
 $RUNNER pull $CONTAINER_IMAGE
@@ -69,8 +69,7 @@ CONTAINER_ID=$($RUNNER run \
   --network $NETWORK_NAME \
   --name $CONTAINER_NAME \
   --publish $HOST_PORT:$CONTAINER_PORT \
-  --env MEILI_MASTER_KEY=${MEILI_MASTER_KEY} \
-  --volume meili-search:/data.ms \
+  --volume dragonfly:/data \
   $CONTAINER_IMAGE)
 
 # Check if the container started successfully
