@@ -64,9 +64,6 @@ CONTAINER_ID=$($RUNNER run \
   --network $NETWORK_NAME \
   --name $CONTAINER_NAME \
   --publish $HOST_PORT:$CONTAINER_PORT \
-  --publish 6370:8001 \
-  --env MEILI_MASTER_KEY=${MEILI_MASTER_KEY} \
-  --volume redis-stack:/data \
   $CONTAINER_IMAGE)
 
 # Check if the container started successfully
