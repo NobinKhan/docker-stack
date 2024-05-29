@@ -68,6 +68,7 @@ CONTAINER_ID=$($RUNNER run \
   --detach \
   --network $NETWORK_NAME \
   --name $CONTAINER_NAME \
+  --ulimit memlock=-1 \
   --publish $HOST_PORT:$CONTAINER_PORT \
   --volume dragonfly:/data \
   $CONTAINER_IMAGE)
