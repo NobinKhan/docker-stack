@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# set -eux  # Exit on error
+# set -e  # Exit on error
 
 # Load environment variables
 source .env
@@ -14,10 +14,10 @@ fi
 # Build docker image (corrected Dockerfile path and quoting)
 RUNNER=$(command -v podman || command -v docker)  # Use whichever is available
 
-CONTAINER_IMAGE="dpage/pgadmin4:8.7"
-CONTAINER_NAME="pgadmin"
-CONTAINER_PORT="80"
-HOST_PORT="5050"
+CONTAINER_IMAGE="chainguard/valkey:latest"
+CONTAINER_NAME="valkey"
+CONTAINER_PORT="6379"
+HOST_PORT="6379"
 NETWORK_NAME="Project_Network"
 
 $RUNNER pull $CONTAINER_IMAGE
@@ -64,9 +64,6 @@ CONTAINER_ID=$($RUNNER run \
   --network $NETWORK_NAME \
   --name $CONTAINER_NAME \
   --publish $HOST_PORT:$CONTAINER_PORT \
-  --env PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL} \
-  --env PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD} \
-  --volume pgadmin_data:/var/lib/pgadmin \
   $CONTAINER_IMAGE)
 
 # Check if the container started successfully
