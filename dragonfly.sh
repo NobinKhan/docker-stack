@@ -6,7 +6,7 @@
 source .env
 
 # Confirm Docker/Podman availability
-if ! command -v "docker" >/dev/null 2>&1 && ! command -v "podman" >/dev/null 2>&1; then
+if ! command -v "podman" >/dev/null 2>&1 && ! command -v "docker" >/dev/null 2>&1; then
   echo "Error: Neither Docker nor Podman found. Please install one of them."
   exit 1
 fi

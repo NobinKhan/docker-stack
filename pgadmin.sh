@@ -6,7 +6,7 @@
 source .env
 
 # Confirm Docker/Podman availability
-if ! command -v "docker" >/dev/null 2>&1 && ! command -v "podman" >/dev/null 2>&1; then
+if ! command -v "podman" >/dev/null 2>&1 && ! command -v "docker" >/dev/null 2>&1; then
   echo "Error: Neither Docker nor Podman found. Please install one of them."
   exit 1
 fi
@@ -14,7 +14,7 @@ fi
 # Build docker image (corrected Dockerfile path and quoting)
 RUNNER=$(command -v podman || command -v docker)  # Use whichever is available
 
-CONTAINER_IMAGE="dpage/pgadmin4:8.7"
+CONTAINER_IMAGE="dpage/pgadmin4:8.8"
 CONTAINER_NAME="pgadmin"
 CONTAINER_PORT="80"
 HOST_PORT="5050"
