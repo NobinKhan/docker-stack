@@ -536,14 +536,44 @@ else
   URL="${BASE_URL}/latest/download/starship-${TARGET}.${EXT}"
 fi
 
-info "Tarball URL: ${UNDERLINE}${BLUE}${URL}${NO_COLOR}"
-confirm "Install Starship ${GREEN}${VERSION}${NO_COLOR} to ${BOLD}${GREEN}${BIN_DIR}${NO_COLOR}?"
-check_bin_dir "${BIN_DIR}"
+if [ "${PLATFORM}" = "apple-darwin" ]; then
+  # Check brew installed or not, if not then install
+  if has brew; then
+    printf "Homebrew detected\n"
+  else
+    # Install Homebrew
+    bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  fi
 
-install "${EXT}"
-completed "Starship ${VERSION} installed"
+  # Install oh-my-zsh
+  if [ -d "$ZSH" ]; then
+    echo "${YELLOW}Oh-my-zsh is already installed.${NO_COLOR}"
+  else
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+  fi
 
-printf '\n'
-info "Please follow the steps for your shell to complete the installation:"
+  # install fonts
+  brew install font-cascadia-code-nf font-meslo-lg-nerd-font font-caskaydia-cove-nerd-font font-fira-code-nerd-font
 
-print_install
+  # Install Powerlevel 10k
+  brew install powerlevel10k
+  echo "source $(brew --prefix)/share/powerlevel10k/powerlevel10k.zsh-theme" >> ~/.zshrc
+
+  # Install autosuggestions and zsh-syntax-highlighting and autocompletion
+  brew install zsh-autocomplete zsh-autosuggestions zsh-syntax-highlighting
+  echo "source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh" >> ~/.zshrc
+  echo "source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" >> ~/.zshrc
+  echo "source $(brew --prefix)/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh" >> ~/.zshrc
+fi
+
+# info "Tarball URL: ${UNDERLINE}${BLUE}${URL}${NO_COLOR}"
+# confirm "Install Starship ${GREEN}${VERSION}${NO_COLOR} to ${BOLD}${GREEN}${BIN_DIR}${NO_COLOR}?"
+# check_bin_dir "${BIN_DIR}"
+
+# install "${EXT}"
+# completed "Starship ${VERSION} installed"
+
+# printf '\n'
+# info "Please follow the steps for your shell to complete the installation:"
+
+# print_install
