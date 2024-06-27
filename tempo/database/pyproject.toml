@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "database"
+version = "0.1.0"
+description = ""
+authors = ["nobinkhan <nazrulkhan.dk@gmail.com>"]
+license = "MIT"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.12"
+django = "^5.0.6"
+python-dotenv = "^1.0.1"
+psycopg = "^3.1.19"
+redis = "^5.0.4"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

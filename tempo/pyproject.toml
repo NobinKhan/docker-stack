@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "carebox-ambulance-service"
+version = "0.0.1"
+description = "Ambulance Service"
+authors = ["nobinkhan <nazrulkhan.dk@gmail.com>"]
+license = "Private"
+package-mode = false
+# readme = "README.md"
+
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.111.0"
+granian = "^1.4.4"
+asyncpg = "^0.29.0"
+orjson = "^3.10.5"
+pydantic-settings = "^2.3.4"
+loguru = "^0.7.2"
+
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^3.7.1"
+ruff = "^0.4.10"
+granian = {extras = ["reload"], version = "^1.4.4"}
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
