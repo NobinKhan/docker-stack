@@ -555,15 +555,30 @@ if [ "${PLATFORM}" = "apple-darwin" ]; then
   # install fonts
   brew install font-cascadia-code-nf font-meslo-lg-nerd-font font-caskaydia-cove-nerd-font font-fira-code-nerd-font
 
-  # Install Powerlevel 10k
-  brew install powerlevel10k
-  echo "source $(brew --prefix)/share/powerlevel10k/powerlevel10k.zsh-theme" >> ~/.zshrc
+  # Install Powerlevel10k autosuggestions and zsh-syntax-highlighting and autocompletion
+  rm -rf ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
+  rm -rf ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-completions
+  rm -rf ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
+  rm -rf ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
+  git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
+  git clone --depth=1 https://github.com/zsh-users/zsh-completions ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-completions
+  git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
+  git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
 
-  # Install autosuggestions and zsh-syntax-highlighting and autocompletion
-  brew install zsh-autocomplete zsh-autosuggestions zsh-syntax-highlighting
-  echo "source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh" >> ~/.zshrc
-  echo "source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" >> ~/.zshrc
-  echo "source $(brew --prefix)/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh" >> ~/.zshrc
+  # File to be edited
+  EDITABLE_FILE="$HOME/.zshrc"
+
+  # Use sed to replace the line
+  sed -i '' 's|ZSH_THEME="robbyrussell"|ZSH_THEME="powerlevel10k/powerlevel10k"|' "$EDITABLE_FILE"
+  sed -i '' 's|plugins=(git)|plugins=(git zsh-completions zsh-autosuggestions zsh-syntax-highlighting)|' "$EDITABLE_FILE"
+
+  echo "Theme and plugins successfully installed in $EDITABLE_FILE"
+
+  # # Install autosuggestions and zsh-syntax-highlighting and autocompletion
+  # brew install zsh-autocomplete zsh-autosuggestions zsh-syntax-highlighting
+  # echo "source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh" >> ~/.zshrc
+  # echo "source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" >> ~/.zshrc
+  # echo "source $(brew --prefix)/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh" >> ~/.zshrc
 fi
 
 # info "Tarball URL: ${UNDERLINE}${BLUE}${URL}${NO_COLOR}"
