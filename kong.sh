@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# set -eux  # Exit on error
+# set -e  # Exit on error
 
 # Load environment variables
 source .env
@@ -14,10 +14,10 @@ fi
 # Build docker image (corrected Dockerfile path and quoting)
 RUNNER=$(command -v podman || command -v docker)  # Use whichever is available
 
-CONTAINER_IMAGE="dpage/pgadmin4:8.9"
-CONTAINER_NAME="pgadmin"
-CONTAINER_PORT="80"
-HOST_PORT="5050"
+CONTAINER_IMAGE="kong:3.7.0"
+CONTAINER_NAME="kong-gateway"
+CONTAINER_PORT="5432"
+HOST_PORT="5432"
 NETWORK_NAME="Project_Network"
 
 $RUNNER pull $CONTAINER_IMAGE
@@ -57,16 +57,33 @@ else
   echo "Network "$NETWORK_NAME" found."
 fi
 
+$RUNNER run --rm --network=$NETWORK_NAME \
+ -e "KONG_DATABASE=postgres" \
+ -e "KONG_PG_HOST=postgresql" \
+ -e "KONG_PG_PASSWORD=nobinpgpass" \
+kong:3.7.0 kong migrations bootstrap
+
 # Start the container
 CONTAINER_ID=$($RUNNER run \
   --rm \
   --detach \
   --network $NETWORK_NAME \
   --name $CONTAINER_NAME \
-  --publish $HOST_PORT:$CONTAINER_PORT \
-  --env PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL} \
-  --env PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD} \
-  --volume pgadmin_data:/var/lib/pgadmin \
+  --env "KONG_DATABASE=postgres" \
+  --env "KONG_PG_HOST=postgresql" \
+  --env "KONG_PG_USER=kong" \
+  --env "KONG_PG_PASSWORD=nobinpgpass" \
+  --env "KONG_PROXY_ACCESS_LOG=/dev/stdout" \
+  --env "KONG_ADMIN_ACCESS_LOG=/dev/stdout" \
+  --env "KONG_PROXY_ERROR_LOG=/dev/stderr" \
+  --env "KONG_ADMIN_ERROR_LOG=/dev/stderr" \
+  --env "KONG_ADMIN_LISTEN=0.0.0.0:8001, 0.0.0.0:8444 ssl" \
+  --env "KONG_ADMIN_GUI_URL=http://localhost:8002" \
+  --publish 8000:8000 \
+  --publish 8443:8443 \
+  --publish 127.0.0.1:8001:8001 \
+  --publish 127.0.0.1:8002:8002 \
+  --publish 127.0.0.1:8444:8444 \
   $CONTAINER_IMAGE)
 
 # Check if the container started successfully
