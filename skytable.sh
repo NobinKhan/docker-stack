@@ -65,6 +65,7 @@ CONTAINER_ID=$($RUNNER run \
   --name $CONTAINER_NAME \
   --publish $HOST_PORT:$CONTAINER_PORT \
   $CONTAINER_IMAGE)
+  # --volume ./container_data/skytable:/var/lib/skytable \
 
 # Check if the container started successfully
 if [[ $? -eq 0 ]]; then
