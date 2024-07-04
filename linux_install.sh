@@ -26,7 +26,7 @@ install_package() {
 install_font() {
     TEMP_DIR=$(mktemp -d)
     FONT_ZIP=$TEMP_DIR/font.zip
-    wget -O $FONT_ZIP $1
+    curl -L -o $FONT_ZIP $1
     unzip -o $FONT_ZIP -d $TEMP_DIR
     sudo mv $TEMP_DIR/*.ttf /usr/share/fonts/
     sudo fc-cache -f -v
