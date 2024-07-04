@@ -19,3 +19,13 @@ https://agola.io/
 *** Jaypore CI
 https://github.com/theSage21/jaypore_ci
 https://www.jayporeci.in
+
+### Linux Command To Install zsh themes and tools
+```
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/NobinKhan/docker-stack/main/linux_install.sh)"
+```
+
+### MacOS Command To Install zsh themes and tools
+```
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/NobinKhan/docker-stack/main/mac_install.sh)"
+```
