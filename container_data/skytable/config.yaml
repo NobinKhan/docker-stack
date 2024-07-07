@@ -1,0 +1,13 @@
+system:
+  mode: prod
+  rs_window: 600
+
+auth:
+  plugin: pwd
+  # replace with your root password of choice
+  root_pass: randompassforme16
+
+endpoints:
+  insecure:
+    host: 0.0.0.0
+    port: 2003

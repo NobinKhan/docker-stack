@@ -6,7 +6,7 @@
 source .env
 
 # Confirm Docker/Podman availability
-if ! command -v "podman" >/dev/null 2>&1 && ! command -v "docker" >/dev/null 2>&1; then
+if ! command -v "docker" >/dev/null 2>&1 && ! command -v "docker" >/dev/null 2>&1; then
   echo "Error: Neither Docker nor Podman found. Please install one of them."
   exit 1
 fi
@@ -64,8 +64,8 @@ CONTAINER_ID=$($RUNNER run \
   --network $NETWORK_NAME \
   --name $CONTAINER_NAME \
   --publish $HOST_PORT:$CONTAINER_PORT \
+  -v ./container_data/skytable:/var/lib/skytable \
   $CONTAINER_IMAGE)
-  # --volume ./container_data/skytable:/var/lib/skytable \
 
 # Check if the container started successfully
 if [[ $? -eq 0 ]]; then
