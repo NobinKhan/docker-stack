@@ -14,7 +14,7 @@ fi
 # Build docker image (corrected Dockerfile path and quoting)
 RUNNER=$(command -v podman || command -v docker)  # Use whichever is available
 
-CONTAINER_IMAGE="aerospike:ce-7.1.0.1_1"
+CONTAINER_IMAGE="aerospike:ce-7.1.0.4_1"
 CONTAINER_NAME="aerospike"
 CONTAINER_PORT="3000-3002"
 HOST_PORT="3000-3002"
