@@ -14,18 +14,6 @@
 sudo iptables -L INPUT
 sudo iptables-restore < /etc/iptables/rules.v4
 ```
-## To set a fully qualified domain name (FQDN) for your server with the following command.
-
-```bash
-sudo hostnamectl set-hostname mail.your-domain.com
-sudo nano /etc/hosts
-```
-## Edit it like below. (Use arrow keys to move the cursor in the file.)
-```text
-127.0.0.1       mail.your-domain.com localhost
-```
-Save and close the file. (To save a file in Nano text editor, press Ctrl+O, then press Enter to confirm. To close the file, press Ctrl+X.)
-
 
 ## Install K3s
 
@@ -70,12 +58,11 @@ kubelet-arg:
 node-taint:
 - node-role.kubernetes.io/master=true:NoSchedule
 tls-san:
-- master-01.barrzen.com
+- 10.0.0.11
 write-kubeconfig-mode: 0644
 
 EOF
 ```
-
 ```bash
 curl -sfL https://get.k3s.io | K3S_TOKEN=<server_token> sh -s - server --write-kubeconfig-mode '0644' --node-taint 'node-role.kubernetes.io/control-plane:NoSchedule' --disable 'servicelb' --disable 'traefik' --disable 'local-storage' --kube-controller-manager-arg 'bind-address=0.0.0.0' --kube-proxy-arg 'metrics-bind-address=0.0.0.0' --kube-scheduler-arg 'bind-address=0.0.0.0' --kubelet-arg 'config=/etc/rancher/k3s/kubelet.config' --kube-controller-manager-arg 'terminated-pod-gc-threshold=10'
 
