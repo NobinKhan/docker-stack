@@ -11,6 +11,14 @@
 ```
 
 ## open ports in ubuntu
+
+### Step 1: Open iptables ports
+```bash
+sudo apt install nano
+sudo nano /etc/iptables/rules.v4
+```
+
+### Step 2: Add below iptables rules
 ```text
 -A INPUT -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT
 -A INPUT -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT
@@ -19,20 +27,24 @@
 -A INPUT -p tcp -m state --state NEW -m tcp --dport 5001 -j ACCEPT
 -A INPUT -p udp -m state --state NEW -m udp --dport 51820 -j ACCEPT
 ```
-## Add above rules in firewall settings and restore the firewall
-```bash
-sudo iptables -L INPUT
-sudo iptables-restore < /etc/iptables/rules.v4
-```
-## To set a fully qualified domain name (FQDN) for your server with the following command.
+`close and save the file`
 
+### Step 3: Restore the firewall
 ```bash
-sudo hostnamectl set-hostname mail.your-domain.com
+sudo iptables-restore < /etc/iptables/rules.v4
+sudo iptables -L INPUT
+```
+
+## Set a fully qualified domain name.
+
+### Step 1: Set hostname and edit /etc/hosts
+```bash
+sudo hostnamectl set-hostname mail.example.com
 sudo nano /etc/hosts
 ```
-## Edit it like below. (Use arrow keys to move the cursor in the file.)
+### Step 2: Edit it like below.
 ```text
-127.0.0.1       mail.your-domain.com localhost
+127.0.0.1       mail.example.com localhost
 ```
 Save and close the file. (To save a file in Nano text editor, press Ctrl+O, then press Enter to confirm. To close the file, press Ctrl+X.)
 
