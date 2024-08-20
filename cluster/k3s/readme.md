@@ -1,5 +1,15 @@
 # K3s Cluster Install Instruction
 
+## Port List tcp
+```text
+80,443,6443,10250,5001
+```
+
+## Port List udp
+```text
+51820
+```
+
 ## open ports in ubuntu
 ```text
 -A INPUT -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT
@@ -76,10 +86,24 @@ write-kubeconfig-mode: 0644
 EOF
 ```
 
+### Step 5: Prepare K3s config file worker
 ```bash
-curl -sfL https://get.k3s.io | K3S_TOKEN=<server_token> sh -s - server --write-kubeconfig-mode '0644' --node-taint 'node-role.kubernetes.io/control-plane:NoSchedule' --disable 'servicelb' --disable 'traefik' --disable 'local-storage' --kube-controller-manager-arg 'bind-address=0.0.0.0' --kube-proxy-arg 'metrics-bind-address=0.0.0.0' --kube-scheduler-arg 'bind-address=0.0.0.0' --kubelet-arg 'config=/etc/rancher/k3s/kubelet.config' --kube-controller-manager-arg 'terminated-pod-gc-threshold=10'
+sudo tee /etc/rancher/k3s/config.yaml <<EOF
+token-file: /etc/rancher/k3s/cluster-token
+node-label:
+  - 'node_type=worker'
+kubelet-arg:
+  - 'config=/etc/rancher/k3s/kubelet.config'
+kube-proxy-arg:
+  - 'metrics-bind-address=0.0.0.0'
 
-curl -sfL https://get.k3s.io | sh -s - --write-kubeconfig-mode 644 --disable servicelb --token some_random_password --node-taint CriticalAddonsOnly=true:NoExecute --bind-address 192.168.0.10 --disable-cloud-controller --disable local-storage
+EOF
+```
 
-curl -sfL https://get.k3s.io | K3S_TOKEN=`cat k3s_secret.txt` sh -s - server --cluster-init --disable=servicelb
+```bash
+curl -sfL https://get.k3s.io | sh -s - --write-kubeconfig-mode 644
+
+curl -sfL https://get.k3s.io | sh -s - agent --server https://master01.barrzen.com:6443
+
+kubectl label nodes worker01 kubernetes.io/role=worker
 ```
