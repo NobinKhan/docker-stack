@@ -35,7 +35,7 @@ sudo iptables-restore < /etc/iptables/rules.v4
 sudo iptables -L INPUT
 ```
 
-## Set a fully qualified domain name.
+## Set a fully qualified domain name. (Master nodes only)
 
 ### Step 1: Set hostname and edit /etc/hosts
 ```bash
@@ -71,7 +71,8 @@ EOF
 openssl rand -hex 10 > /etc/rancher/k3s/cluster-token
 ```
 
-### Step 4: Prepare K3s config file
+## Master Nodes Configuration
+### Step 1: Prepare K3s config file.
 ```bash
 sudo tee /etc/rancher/k3s/config.yaml <<EOF
 token-file: /etc/rancher/k3s/cluster-token
@@ -92,13 +93,18 @@ kubelet-arg:
 node-taint:
 - node-role.kubernetes.io/master=true:NoSchedule
 tls-san:
-- master-01.barrzen.com
-write-kubeconfig-mode: 0644
+- master01.barrzen.com
+write-kubeconfig-mode: 644
 
 EOF
 ```
+### Step 2: Execute below commands to install k3s
+```bash
+curl -sfL https://get.k3s.io | sh -s - --write-kubeconfig-mode 644
+```
 
-### Step 5: Prepare K3s config file worker
+## Worker Nodes Configuration
+### Step 1: Prepare K3s config file.
 ```bash
 sudo tee /etc/rancher/k3s/config.yaml <<EOF
 token-file: /etc/rancher/k3s/cluster-token
@@ -112,10 +118,12 @@ kube-proxy-arg:
 EOF
 ```
 
+### Step 2: Execute below commands to install k3s
 ```bash
-curl -sfL https://get.k3s.io | sh -s - --write-kubeconfig-mode 644
-
 curl -sfL https://get.k3s.io | sh -s - agent --server https://master01.barrzen.com:6443
+```
 
+### Step 3: Chnage level of worker nodes
+```bash
 kubectl label nodes worker01 kubernetes.io/role=worker
 ```
