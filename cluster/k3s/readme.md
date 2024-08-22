@@ -127,3 +127,29 @@ curl -sfL https://get.k3s.io | sh -s - agent --server https://master01.barrzen.c
 ```bash
 kubectl label nodes worker01 kubernetes.io/role=worker
 ```
+
+## Instal kubctl & helm on local machine
+
+### Step 1: Install kubectl (Linux only)
+```bash
+# Command for x86_64
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+
+# Command for arm64
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/arm64/kubectl"
+
+# Install kubectl
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+# Check kubectl version
+kubectl version --client
+```
+
+### Step 2: Install helm
+```bash
+# Install command
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+# Check helm version
+helm version
+```
