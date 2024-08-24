@@ -123,7 +123,7 @@ EOF
 curl -sfL https://get.k3s.io | sh -s - agent --server https://master01.barrzen.com:6443
 ```
 
-### Step 3: Chnage level of worker nodes
+### Step 3: Label worker nodes as worker
 ```bash
 kubectl label nodes worker01 kubernetes.io/role=worker
 ```
@@ -152,4 +152,13 @@ curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
 # Check helm version
 helm version
+```
+
+### Step 3: Install kubecolor & arkade
+```bash
+helm repo add kubecolor https://kubecolor.github.io/charts
+helm repo update
+helm install kubecolor kubecolor/kubecolor
+
+curl -sLS https://get.arkade.dev | sudo sh
 ```
