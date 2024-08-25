@@ -14,7 +14,7 @@ fi
 # Build docker image (corrected Dockerfile path and quoting)
 RUNNER=$(command -v podman || command -v docker)  # Use whichever is available
 
-CONTAINER_IMAGE="getmeili/meilisearch:v1.8.0"
+CONTAINER_IMAGE="getmeili/meilisearch:v1.8.4"
 CONTAINER_NAME="meilisearch"
 CONTAINER_PORT="7700"
 HOST_PORT="7700"
