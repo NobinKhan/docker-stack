@@ -1,4 +1,4 @@
-FROM chainguard/wolfi-base
+FROM cgr.dev/chainguard/wolfi-base
 
 ENV PATH /usr/local/bin:$PATH
 
