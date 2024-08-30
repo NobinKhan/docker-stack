@@ -10,15 +10,16 @@
 51820
 ```
 
-## open ports in ubuntu
+## open ports
 
-### Step 1: Open iptables ports
+### Ubuntu
+#### Step 1: Open iptables ports
 ```bash
 sudo apt install nano
 sudo nano /etc/iptables/rules.v4
 ```
 
-### Step 2: Add below iptables rules
+#### Step 2: Add below iptables rules
 ```text
 -A INPUT -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT
 -A INPUT -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT
@@ -29,10 +30,57 @@ sudo nano /etc/iptables/rules.v4
 ```
 `close and save the file`
 
-### Step 3: Restore the firewall
+#### Step 3: Restore the firewall
 ```bash
 sudo iptables-restore < /etc/iptables/rules.v4
 sudo iptables -L INPUT
+```
+
+### Rocky Linux
+#### Step 1: Install `firewalld` package if not installed
+```bash
+sudo dnf install -y firewalld
+sudo systemctl start firewalld
+sudo systemctl enable firewalld
+sudo systemctl status firewalld
+```
+
+#### Step 2: Check current open ports
+```bash
+sudo firewall-cmd --list-all
+```
+
+#### Step 3: Open Ports
+```bash
+sudo firewall-cmd --permanent --add-port=80/tcp
+sudo firewall-cmd --permanent --add-port=443/tcp
+sudo firewall-cmd --permanent --add-port=6443/tcp
+sudo firewall-cmd --permanent --add-port=10250/tcp
+sudo firewall-cmd --permanent --add-port=5001/tcp
+sudo firewall-cmd --permanent --add-port=51820/udp
+sudo firewall-cmd --reload
+```
+
+#### Step 4: Check open ports
+```bash
+sudo firewall-cmd --list-all
+```
+
+#### Step 5: Open service port
+```bash
+sudo firewall-cmd --permanent --add-service=ssh
+sudo firewall-cmd --reload
+```
+
+#### To Remove Ports
+```bash
+sudo firewall-cmd --permanent --remove-port=80/tcp
+sudo firewall-cmd --permanent --remove-port=443/tcp
+sudo firewall-cmd --permanent --remove-port=6443/tcp
+sudo firewall-cmd --permanent --remove-port=10250/tcp
+sudo firewall-cmd --permanent --remove-port=5001/tcp
+sudo firewall-cmd --permanent --remove-port=51820/udp
+sudo firewall-cmd --reload
 ```
 
 ## Set a fully qualified domain name. (Master nodes only)
@@ -52,12 +100,12 @@ Save and close the file. (To save a file in Nano text editor, press Ctrl+O, then
 ## Install K3s
 
 ### Step 1: Create config directory
-```bash
+```sh
 sudo mkdir -p /etc/rancher/k3s
 ```
 
 ### Step 2: Create kublet config file
-```bash
+```sh
 sudo tee /etc/rancher/k3s/kubelet.config <<EOF
 apiVersion: kubelet.config.k8s.io/v1beta1
 kind: KubeletConfiguration
@@ -67,13 +115,13 @@ EOF
 ```
 
 ### Step 3: Generate secret for master node
-```bash
+```sh
 openssl rand -hex 10 > /etc/rancher/k3s/cluster-token
 ```
 
 ## Master Nodes Configuration
 ### Step 1: Prepare K3s config file.
-```bash
+```sh
 sudo tee /etc/rancher/k3s/config.yaml <<EOF
 token-file: /etc/rancher/k3s/cluster-token
 disable:
@@ -99,13 +147,13 @@ write-kubeconfig-mode: 644
 EOF
 ```
 ### Step 2: Execute below commands to install k3s
-```bash
+```sh
 curl -sfL https://get.k3s.io | sh -s - --write-kubeconfig-mode 644
 ```
 
 ## Worker Nodes Configuration
 ### Step 1: Prepare K3s config file.
-```bash
+```sh
 sudo tee /etc/rancher/k3s/config.yaml <<EOF
 token-file: /etc/rancher/k3s/cluster-token
 node-label:
@@ -119,7 +167,7 @@ EOF
 ```
 
 ### Step 2: Execute below commands to install k3s
-```bash
+```sh
 curl -sfL https://get.k3s.io | sh -s - agent --server https://master01.barrzen.com:6443
 ```
 
