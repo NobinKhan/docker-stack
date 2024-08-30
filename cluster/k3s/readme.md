@@ -13,13 +13,13 @@
 ## open ports
 
 ### Ubuntu
-#### Step 1: Open iptables ports
-```bash
+##### Step 1: Open iptables ports
+```sh
 sudo apt install nano
 sudo nano /etc/iptables/rules.v4
 ```
 
-#### Step 2: Add below iptables rules
+##### Step 2: Add below iptables rules
 ```text
 -A INPUT -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT
 -A INPUT -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT
@@ -30,28 +30,28 @@ sudo nano /etc/iptables/rules.v4
 ```
 `close and save the file`
 
-#### Step 3: Restore the firewall
-```bash
+##### Step 3: Restore the firewall
+```sh
 sudo iptables-restore < /etc/iptables/rules.v4
 sudo iptables -L INPUT
 ```
 
 ### Rocky Linux
-#### Step 1: Install `firewalld` package if not installed
-```bash
+##### Step 1: Install `firewalld` package if not installed
+```sh
 sudo dnf install -y firewalld
 sudo systemctl start firewalld
 sudo systemctl enable firewalld
 sudo systemctl status firewalld
 ```
 
-#### Step 2: Check current open ports
-```bash
+##### Step 2: Check current open ports
+```sh
 sudo firewall-cmd --list-all
 ```
 
-#### Step 3: Open Ports
-```bash
+##### Step 3: Open Ports
+```sh
 sudo firewall-cmd --permanent --add-port=80/tcp
 sudo firewall-cmd --permanent --add-port=443/tcp
 sudo firewall-cmd --permanent --add-port=6443/tcp
@@ -61,19 +61,19 @@ sudo firewall-cmd --permanent --add-port=51820/udp
 sudo firewall-cmd --reload
 ```
 
-#### Step 4: Check open ports
-```bash
+##### Step 4: Check open ports
+```sh
 sudo firewall-cmd --list-all
 ```
 
-#### Step 5: Open service port
-```bash
+##### Step 5: Open service port
+```sh
 sudo firewall-cmd --permanent --add-service=ssh
 sudo firewall-cmd --reload
 ```
 
 #### To Remove Ports
-```bash
+```sh
 sudo firewall-cmd --permanent --remove-port=80/tcp
 sudo firewall-cmd --permanent --remove-port=443/tcp
 sudo firewall-cmd --permanent --remove-port=6443/tcp
@@ -85,12 +85,12 @@ sudo firewall-cmd --reload
 
 ## Set a fully qualified domain name. (Master nodes only)
 
-### Step 1: Set hostname and edit /etc/hosts
-```bash
+#### Step 1: Set hostname and edit /etc/hosts
+```sh
 sudo hostnamectl set-hostname mail.example.com
 sudo nano /etc/hosts
 ```
-### Step 2: Edit it like below.
+#### Step 2: Edit it like below.
 ```text
 127.0.0.1       mail.example.com localhost
 ```
@@ -99,12 +99,12 @@ Save and close the file. (To save a file in Nano text editor, press Ctrl+O, then
 
 ## Install K3s
 
-### Step 1: Create config directory
+#### Step 1: Create config directory
 ```sh
 sudo mkdir -p /etc/rancher/k3s
 ```
 
-### Step 2: Create kublet config file
+#### Step 2: Create kublet config file
 ```sh
 sudo tee /etc/rancher/k3s/kubelet.config <<EOF
 apiVersion: kubelet.config.k8s.io/v1beta1
@@ -114,13 +114,13 @@ shutdownGracePeriodCriticalPods: 10s
 EOF
 ```
 
-### Step 3: Generate secret for master node
+#### Step 3: Generate secret for master node
 ```sh
 openssl rand -hex 10 > /etc/rancher/k3s/cluster-token
 ```
 
 ## Master Nodes Configuration
-### Step 1: Prepare K3s config file.
+#### Step 1: Prepare K3s config file.
 ```sh
 sudo tee /etc/rancher/k3s/config.yaml <<EOF
 token-file: /etc/rancher/k3s/cluster-token
@@ -146,13 +146,13 @@ write-kubeconfig-mode: 644
 
 EOF
 ```
-### Step 2: Execute below commands to install k3s
+#### Step 2: Execute below commands to install k3s
 ```sh
 curl -sfL https://get.k3s.io | sh -s - --write-kubeconfig-mode 644
 ```
 
 ## Worker Nodes Configuration
-### Step 1: Prepare K3s config file.
+#### Step 1: Prepare K3s config file.
 ```sh
 sudo tee /etc/rancher/k3s/config.yaml <<EOF
 token-file: /etc/rancher/k3s/cluster-token
@@ -166,20 +166,20 @@ kube-proxy-arg:
 EOF
 ```
 
-### Step 2: Execute below commands to install k3s
+#### Step 2: Execute below commands to install k3s
 ```sh
 curl -sfL https://get.k3s.io | sh -s - agent --server https://master01.barrzen.com:6443
 ```
 
-### Step 3: Label worker nodes as worker
-```bash
+#### Step 3: Label worker nodes as worker
+```sh
 kubectl label nodes worker01 kubernetes.io/role=worker
 ```
 
 ## Instal kubctl & helm on local machine
 
-### Step 1: Install kubectl (Linux only)
-```bash
+#### Step 1: Install kubectl (Linux only)
+```sh
 # Command for x86_64
 curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
 
@@ -193,20 +193,17 @@ sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 kubectl version --client
 ```
 
-### Step 2: Install helm
-```bash
+#### Step 2: Install helm
+```sh
 # Install command
-curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | sh
 
 # Check helm version
 helm version
 ```
 
-### Step 3: Install kubecolor & arkade
-```bash
-helm repo add kubecolor https://kubecolor.github.io/charts
-helm repo update
-helm install kubecolor kubecolor/kubecolor
-
+#### Step 3: Install kubecolor & arkade
+```sh
 curl -sLS https://get.arkade.dev | sudo sh
+ark get kubecolor
 ```
