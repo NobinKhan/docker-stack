@@ -46,3 +46,6 @@ docker login -u nobinkhan
 ```bash
 docker buildx build --platform linux/amd64,linux/arm64 -t nobinkhan/python:3.12.4-slim . --push
 ```
+
+https://powersj.io/posts/ubuntu-qemu-cli/
+https://cloud-images.ubuntu.com/minimal/
