@@ -25,6 +25,11 @@ https://www.jayporeci.in
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/NobinKhan/docker-stack/main/linux_install.sh)"
 ```
 
+### Linux version-2 Command To Install zsh themes and tools
+```sh
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/NobinKhan/docker-stack/main/terminal_config.sh)"
+```
+
 ### MacOS Command To Install zsh themes and tools
 ```sh
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/NobinKhan/docker-stack/main/mac_install.sh)"
@@ -49,3 +54,15 @@ docker buildx build --platform linux/amd64,linux/arm64 -t nobinkhan/python:3.12.
 
 https://powersj.io/posts/ubuntu-qemu-cli/
 https://cloud-images.ubuntu.com/minimal/
+
+### Isolated Environment
+```bash
+podman run -it \
+  --name mojoenv \
+  --userns=keep-id \
+  --security-opt label=disable \
+  --env-file /dev/null \
+  --hostname mojoenv \
+  --volume /run/media/nobin/Files/project:/home/nonroot/project \
+  ubuntu:24.04
+```

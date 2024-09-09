@@ -1,0 +1,120 @@
+ARG PYTHON_VERSION=3.12.4
+ARG APP_USER=nonroot
+ARG PROJECT_DIR=/home/nonroot
+ARG PYTHON_BUILDER_IMAGE=nobinkhan/python:${PYTHON_VERSION}-slim
+
+## ---------------------------------------------------------------------------------- ##
+## ------------------------- Python build -------------------------------------------- ##
+## ---------------------------------------------------------------------------------- ##
+FROM ${PYTHON_BUILDER_IMAGE} AS python-base
+
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    POETRY_NO_INTERACTION=1 \
+    POETRY_VIRTUALENVS_IN_PROJECT=1 \
+    POETRY_VIRTUALENVS_CREATE=1 \
+    POETRY_CACHE_DIR=/tmp/poetry_cache
+
+WORKDIR ${PROJECT_DIR}
+COPY pyproject.toml README.md ${PROJECT_DIR}/
+
+RUN set -eux; \
+    apk update --no-cache ;\
+    apk upgrade --no-cache ;\
+    apk add --no-cache py3-poetry openssl findutils python3-dev build-base rsync supercronic \
+    linux-headers \
+    zlib-dev ;
+# posix-libc-utils gcc libgcc glibc-dev \
+
+
+RUN set -eux; \
+    poetry update && poetry install --without dev --no-root ;
+
+
+# Copy Project Files
+COPY pyproject.toml ${PROJECT_DIR}/
+COPY README.md ${PROJECT_DIR}/
+COPY Contribution ${PROJECT_DIR}/Contribution
+COPY DeliveryTeam ${PROJECT_DIR}/DeliveryTeam
+COPY Doctor_Career ${PROJECT_DIR}/Doctor_Career
+COPY Doctor_appointment ${PROJECT_DIR}/Doctor_appointment
+COPY EcommerceProject ${PROJECT_DIR}/EcommerceProject
+COPY Online_Doctor_Booking ${PROJECT_DIR}/Online_Doctor_Booking
+COPY Patient ${PROJECT_DIR}/Patient
+COPY Wishlist ${PROJECT_DIR}/Wishlist
+COPY ambulance ${PROJECT_DIR}/ambulance
+COPY biography ${PROJECT_DIR}/biography
+COPY careboxQuiz ${PROJECT_DIR}/careboxQuiz
+COPY career ${PROJECT_DIR}/career
+COPY dashboard ${PROJECT_DIR}/dashboard
+COPY delete ${PROJECT_DIR}/delete
+COPY emails ${PROJECT_DIR}/emails
+COPY feedback ${PROJECT_DIR}/feedback
+COPY functions ${PROJECT_DIR}/functions
+COPY header_content ${PROJECT_DIR}/header_content
+COPY inventory ${PROJECT_DIR}/inventory
+COPY live_doctor ${PROJECT_DIR}/live_doctor
+COPY marketing ${PROJECT_DIR}/marketing
+COPY notification ${PROJECT_DIR}/notification
+COPY pathology ${PROJECT_DIR}/pathology
+COPY payment ${PROJECT_DIR}/payment
+COPY pharmacist ${PROJECT_DIR}/pharmacist
+COPY physio_care ${PROJECT_DIR}/physio_care
+COPY pos ${PROJECT_DIR}/pos
+COPY product ${PROJECT_DIR}/product
+COPY refund ${PROJECT_DIR}/refund
+COPY report ${PROJECT_DIR}/report
+COPY sales_dash ${PROJECT_DIR}/sales_dash
+COPY scripts ${PROJECT_DIR}/scripts
+COPY slider_image ${PROJECT_DIR}/slider_image
+COPY templates ${PROJECT_DIR}/templates
+COPY upload_prescription_api ${PROJECT_DIR}/upload_prescription_api
+COPY user_api ${PROJECT_DIR}/user_api
+COPY utils ${PROJECT_DIR}/utils
+COPY vendor_order ${PROJECT_DIR}/vendor_order
+COPY warehouse ${PROJECT_DIR}/warehouse
+COPY manage.py ${PROJECT_DIR}/manage.py
+COPY docker/stage.env ${PROJECT_DIR}/.env
+
+RUN set -eux; \
+    rm -rf $POETRY_CACHE_DIR pyproject.toml poetry.lock README.md ;
+
+
+## ---------------------------------------------------------------------------------- ##
+## ------------------------------- Final -------------------------------------------- ##
+## ---------------------------------------------------------------------------------- ##
+
+FROM ${PYTHON_BUILDER_IMAGE} AS final
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    VIRTUAL_ENV=${PROJECT_DIR}/.venv \
+    PATH="${PROJECT_DIR}/.venv/bin:$PATH" \
+    PROJECT_DIR=${PROJECT_DIR}
+
+WORKDIR ${PROJECT_DIR}
+COPY --from=python-base ${PROJECT_DIR} ${PROJECT_DIR}
+COPY --from=python-base /usr/bin/supercronic /usr/bin/supercronic
+
+RUN set -eux; \
+    apk update --no-cache ;\
+    apk upgrade --no-cache ;\
+    apk cache clean ;\
+    python manage.py collectstatic --no-input ;\
+    # find . -type d -name '__pycache__' -exec rm -rf {} + ;\
+    (echo "58 5 * * * bash -c ${PROJECT_DIR}/scripts/daily_check.sh") >> \
+    ${PROJECT_DIR}/crontab
+
+RUN set -eux; \
+    mv templates/assets/ static/assets/ ;
+
+EXPOSE 8000
+EXPOSE 8001
+
+ENTRYPOINT ["sh", "-c", "python manage.py migrate &&\
+    gunicorn EcommerceProject.wsgi:application --bind 0.0.0.0:8000 -w 4 --timeout 3600 &\
+    daphne EcommerceProject.asgi:application --bind 0.0.0.0 --port 8001 &\
+    python manage.py rundramatiq &\
+    supercronic ${PROJECT_DIR}/crontab \
+    "]
