@@ -1,0 +1,25 @@
+ARG BASE_IMAGE=ubuntu:24.04
+
+FROM ${BASE_IMAGE}
+
+ARG APP_USER=ubuntu
+ARG PROJECT_DIR=/home/${APP_USER}/project
+ENV APP_USER=${APP_USER} \
+    UID=1000 \
+    GID=1000
+
+WORKDIR ${PROJECT_DIR}
+
+RUN set -eux; \
+    apt-get update -y ;\
+    apt-get upgrade -y ;\
+    apt-get install nano curl git sudo zsh zlib1g-dev libncurses5-dev build-essential -y
+
+RUN set -eux; \
+    # useradd -m -s /bin/zsh -u ${UID} -g ${GID} -d /home/${APP_USER} ${APP_USER} ;\
+    usermod -aG sudo ${APP_USER} ;\
+    echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
+USER ${APP_USER}
+
+CMD [ "/bin/zsh" ]
