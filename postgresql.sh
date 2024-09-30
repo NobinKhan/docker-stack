@@ -14,7 +14,7 @@ fi
 # Build docker image (corrected Dockerfile path and quoting)
 RUNNER=$(command -v podman || command -v docker)  # Use whichever is available
 
-CONTAINER_IMAGE="chainguard/postgres:latest"
+CONTAINER_IMAGE="postgres:16.4-alpine3.20"
 CONTAINER_NAME="postgresql"
 CONTAINER_PORT="5432"
 HOST_PORT="5432"
