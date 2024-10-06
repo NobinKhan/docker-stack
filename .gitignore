@@ -1,3 +1,7 @@
 pgadmin_data
 .sky*
 gns.*
+
+# Added by cargo
+
+/target
