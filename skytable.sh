@@ -14,7 +14,7 @@ fi
 # Build docker image (corrected Dockerfile path and quoting)
 RUNNER=$(command -v podman || command -v docker)  # Use whichever is available
 
-CONTAINER_IMAGE="skytable/skytable:v0.8.3"
+CONTAINER_IMAGE="skytable/skytable:v0.8.4"
 CONTAINER_NAME="skytable"
 CONTAINER_PORT="2003"
 HOST_PORT="2003"
