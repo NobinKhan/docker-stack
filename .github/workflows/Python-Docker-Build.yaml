@@ -1,0 +1,107 @@
+run-name: Python Docker Build by @${{ github.actor }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Python version"
+        required: true
+        default: "3.12"
+        type: choice
+        options:
+          - "3.13"
+          - "3.12"
+
+env:
+  GITHUB_IMAGE_REGISTRY: ghcr.io
+  GITHUB_IMAGE_NAME: barrzen/pacific-backend
+
+jobs:
+  Build:
+    name: "Building Image"
+    runs-on: "ubuntu-latest"
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+
+    steps:
+      - name: "Checkout Code"
+        uses: "actions/checkout@v4"
+
+      - name: "Setup Python"
+        uses: actions/setup-python@v5
+        with:
+          python-version: "${{ github.event.inputs.version }}" # This will automatically resolve to the latest patch version
+          cache: "pip"
+
+      - name: "Get Python version"
+        id: python_version
+        run: |
+          # Capture the Python version and remove the 'Python' text
+          python_version=$(python --version | awk '{print $2}')
+          echo "Python version installed: $python_version"
+          # Set it as an output variable
+          echo "::set-output name=latest_version::$python_version"
+
+      - name: "Display Latest Python Version"
+        run: echo "The latest Python version for ${{ github.event.inputs.version }} is ${{ steps.python_version.outputs.latest_version }}"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log into registry ${{ env.REGISTRY }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.GITHUB_IMAGE_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: "Set Tag For Github Registry"
+        run: |
+          source "${HOME}/.rye/env"
+          if [ "${{ env.NEED_BUMP }}" = "1" ]; then
+            rye version -b ${{ github.event.inputs.version }}
+            git config --global user.name 'github-actions[bot]'
+            git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+            git add pyproject.toml
+            git commit -m "Bump version to $(rye version) [skip ci]"
+          fi
+          echo "CURRENT_VERSION=$(rye version)" >> $GITHUB_ENV
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.CONTAINER_IMAGE_REGISTRY }}/${{ env.CONTAINER_IMAGE_NAME }}
+
+      - name: Build and push Docker image
+        id: build-and-push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64, linux/arm64
+          tags: ${{ env.CONTAINER_IMAGE_REGISTRY }}/${{ env.CONTAINER_IMAGE_NAME }}:${{ env.CURRENT_VERSION }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: "v2.2.4"
+
+      - name: Sign the published Docker image
+        env:
+          TAGS: ${{ env.CONTAINER_IMAGE_REGISTRY }}/${{ env.CONTAINER_IMAGE_NAME }}:${{ env.CURRENT_VERSION }}
+          DIGEST: ${{ steps.build-and-push.outputs.digest }}
+        run: echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
+
+      - name: Commit and push version bump
+        run: |
+          git tag v${{ env.CURRENT_VERSION }}
+          git push origin main --tags
