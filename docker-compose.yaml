@@ -1,0 +1,61 @@
+services:
+  postgresql:
+    image: postgres:17.0-alpine3.20
+    container_name: postgresql
+    ports:
+      - 5432:5432
+    restart: always
+    volumes:
+      - ./data/postgresql:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+    networks:
+      - dev-server
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    ports:
+      - 5050:80
+    restart: always
+    volumes:
+      - ./data/pgadmin:/var/lib/pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    networks:
+      - dev_server
+
+
+  valkey:
+    image: chainguard/valkey:latest
+    container_name: valkey
+    ports:
+      - 6379:6379
+    restart: always
+    volumes:
+      - ./data/valkey:/data
+    environment:
+      - VALKEY_DATA_DIR=/data
+    networks:
+      - dev_server
+
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.10.3
+    container_name: meilisearch
+    ports:
+      - 7700:7700
+    restart: always
+    volumes:
+      - ./data/meilisearch:/data.ms
+    environment:
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
+    networks:
+      - dev_server
+
+networks:
+  dev_server:
+    external: true
