@@ -56,6 +56,15 @@ services:
     networks:
       - dev_server
 
+  caredrop:
+    image: ghcr.io/careboxdevteam/caredrop_backend:latest
+    container_name: caredrop
+    ports:
+      - 8080:8000
+    restart: always
+    networks:
+      - dev_server
+
 networks:
   dev_server:
     external: true

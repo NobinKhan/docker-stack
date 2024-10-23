@@ -1,20 +1,17 @@
 FROM cgr.dev/chainguard/wolfi-base
 
 ARG PYTHON_VERSION='3.13.0'
-ENV PATH='/usr/local/bin:$PATH'
 ENV LANG='C.UTF-8'
-ENV GPG_KEY='7169605F62C751356D054A26A821E680E5FA6305'
 ENV PYTHON_SHA256='086de5882e3cb310d4dca48457522e2e48018ecd43da9cdf827f6a0759efb07d'
 
 # runtime dependencies
-RUN set -eux; \
-	apk add --no-cache \
-		ca-certificates \
-		tzdata \
-	;
+RUN set -eux ;\
+	export PATH=$PATH:/usr/local/bin ;\
+	apk update --no-cache ;\
+	apk upgrade --no-cache ;\
+	apk add --no-cache ca-certificates tzdata
 
 RUN set -eux; \
-	\
 	apk add --no-cache --virtual .build-deps \
 		gnupg \
 		wget \
@@ -51,7 +48,7 @@ RUN set -eux; \
 	echo "$PYTHON_SHA256 *python.tar.xz" | sha256sum -c -; \
 	wget -O python.tar.xz.asc "https://www.python.org/ftp/python/${PYTHON_VERSION%%[a-z]*}/Python-$PYTHON_VERSION.tar.xz.asc"; \
 	GNUPGHOME="$(mktemp -d)"; export GNUPGHOME; \
-	gpg --batch --keyserver hkps://keys.openpgp.org --recv-keys "$GPG_KEY"; \
+	gpg --batch --keyserver hkps://keys.openpgp.org --recv-keys "7169605F62C751356D054A26A821E680E5FA6305"; \
 	gpg --batch --verify python.tar.xz.asc python.tar.xz; \
 	gpgconf --kill all; \
 	rm -rf "$GNUPGHOME" python.tar.xz.asc; \
