@@ -90,7 +90,7 @@ jobs:
 
       - name: Push latest tag
         run: |
-          if [[ ${{ steps.python_version.outputs.python_version }} == "3.13" ]]; then
+          if [[ "${{ github.event.inputs.version }}" == "3.13" ]]; then
             docker buildx imagetools create \
               --tag ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}:latest \
               --tag ${{ secrets.DOCKERHUB_USERNAME }}/python:latest \
