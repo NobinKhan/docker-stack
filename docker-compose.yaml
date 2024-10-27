@@ -35,10 +35,6 @@ services:
     ports:
       - 6379:6379
     restart: always
-    volumes:
-      - ./data/valkey:/data
-    environment:
-      - VALKEY_DATA_DIR=/data
     networks:
       - dev_server
 
@@ -56,6 +52,7 @@ services:
     networks:
       - dev_server
 
+
   caredrop:
     image: ghcr.io/careboxdevteam/caredrop_backend:latest
     container_name: caredrop
@@ -64,6 +61,18 @@ services:
     restart: always
     networks:
       - dev_server
+
+
+  carebox-backend:
+    image: ghcr.io/careboxdevteam/carebox-backend-cicd:latest
+    container_name: carebox-backend
+    ports:
+      - 8082:8000
+    restart: always
+    networks:
+      - dev_server
+      - nginx-proxy
+
 
   nginx-proxy-manager:
     image: 'jc21/nginx-proxy-manager:latest'
@@ -91,6 +100,7 @@ services:
       - nginx-proxy
       - dev_server
 
+
   nginx-proxy-db:
     image: 'jc21/mariadb-aria:latest'
     restart: unless-stopped
@@ -104,6 +114,7 @@ services:
       - ./mysql:/var/lib/mysql
     networks:
       - nginx-proxy
+
 
 networks:
   nginx-proxy:
