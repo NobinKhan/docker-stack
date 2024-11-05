@@ -73,6 +73,16 @@ services:
       - dev_server
       - nginx-proxy
 
+  carebox-product-micro:
+    image: ghcr.io/careboxdevteam/care-box-product-service/development:latest
+    container_name: carebox-product-micro
+    ports:
+      - 8083:8000
+    restart: always
+    networks:
+      - dev_server
+      - nginx-proxy
+
 
   nginx-proxy-manager:
     image: 'jc21/nginx-proxy-manager:latest'
