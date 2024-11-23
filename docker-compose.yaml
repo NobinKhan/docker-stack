@@ -83,17 +83,19 @@ services:
       - dev_server
       - nginx-proxy
 
+  cloudflare_tunnel:
+    image: cloudflare/cloudflared
+    restart: unless-stopped
+    command: tunnel run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TOKEN}
+    networks:
+      - npm
 
   nginx-proxy-manager:
-    image: 'jc21/nginx-proxy-manager:latest'
+    image: 'jc21/nginx-proxy-manager:v3'
     container_name: nginx-proxy
     restart: unless-stopped
-    ports:
-      # These ports are in format <host-port>:<container-port>
-      - '80:80' # Public HTTP Port
-      - '443:443' # Public HTTPS Port
-      - '81:81' # Admin Web Port
-
     environment:
       # Mysql/Maria connection parameters:
       DB_MYSQL_HOST: ${MYSQL_HOST}
@@ -131,3 +133,4 @@ networks:
     external: true
   dev_server:
     external: true
+
