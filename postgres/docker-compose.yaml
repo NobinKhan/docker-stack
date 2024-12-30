@@ -1,6 +1,6 @@
 services:
   postgresql:
-    image: cus_postgres17:0.0.3
+    image: cus_postgres17:0.0.4
     container_name: postgresql
     ports:
       - 5432:5432
@@ -11,3 +11,15 @@ services:
       POSTGRES_PASSWORD: randompassforme
       POSTGRES_DB: nobin
       POSTGRES_USER: nobin
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin4
+    restart: always
+    ports:
+      - 8080:80
+    environment:
+      PGADMIN_DEFAULT_EMAIL: nobin@pgadmin.com
+      PGADMIN_DEFAULT_PASSWORD: randompassforme
+    depends_on:
+      - postgresql

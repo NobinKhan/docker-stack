@@ -1,0 +1,34 @@
+FROM chainguard/wolfi-base:latest
+
+ARG VERSION="17"
+ENV LANG="C.UTF-8"
+ENV LC_ALL="C.UTF-8"
+ENV PGDATA="/var/lib/postgresql/data"
+
+RUN set -eux; \
+    apk update --no-cache; \
+    apk upgrade --no-cache; \
+    addgroup -g 70 -S postgres; \
+    adduser -u 70 -S -D -G postgres -H -h /var/lib/postgresql -s /bin/sh postgres; \
+    install --verbose --directory --owner postgres --group postgres --mode 1777 /var/lib/postgresql; \
+    apk add --no-cache \
+        ca-certificates \
+        bash \
+        zstd \
+        gosu \
+        pgaudit-${VERSION} \
+        postgresql-${VERSION} \
+        postgresql-${VERSION}-client \
+        postgresql-${VERSION}-contrib \
+        postgresql-${VERSION}-oci-entrypoint; \
+    postgres --version; \
+    mkdir -p "$PGDATA"; \
+    chown -R postgres:postgres "$PGDATA"; \
+    chmod 700 "$PGDATA"
+
+VOLUME /var/lib/postgresql/data
+ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
+STOPSIGNAL SIGINT
+EXPOSE 5432
+
+CMD ["postgres"]
