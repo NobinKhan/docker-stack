@@ -1,0 +1,13 @@
+services:
+  postgresql:
+    image: cus_postgres17:0.0.3
+    container_name: postgresql
+    ports:
+      - 5432:5432
+    restart: always
+    volumes:
+      - ./data/postgresql:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: randompassforme
+      POSTGRES_DB: nobin
+      POSTGRES_USER: nobin

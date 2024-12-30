@@ -12,9 +12,9 @@ if ! command -v "podman" >/dev/null 2>&1 && ! command -v "docker" >/dev/null 2>&
 fi
 
 # Build docker image (corrected Dockerfile path and quoting)
-RUNNER=$(command -v podman || command -v docker)  # Use whichever is available
+RUNNER=$(command -v docker || command -v docker)  # Use whichever is available
 
-CONTAINER_IMAGE="postgres:17.0-alpine3.20"
+CONTAINER_IMAGE="cus_postgres17:0.0.2"
 CONTAINER_NAME="postgresql"
 CONTAINER_PORT="5432"
 HOST_PORT="5432"
