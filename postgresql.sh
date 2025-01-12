@@ -14,7 +14,7 @@ fi
 # Build docker image (corrected Dockerfile path and quoting)
 RUNNER=$(command -v podman || command -v docker)  # Use whichever is available
 
-CONTAINER_IMAGE="postgres:17.0-alpine3.20"
+CONTAINER_IMAGE="nobinkhan/postgresql:latest"
 CONTAINER_NAME="postgresql"
 CONTAINER_PORT="5432"
 HOST_PORT="5432"
@@ -67,7 +67,7 @@ CONTAINER_ID=$($RUNNER run \
   --env POSTGRES_USER=${DATABASE_USER} \
   --env POSTGRES_PASSWORD=${DATABASE_PASSWORD} \
   --volume postgresql_data1:/data/postgres \
-  --volume postgresql_data2:/var/lib/postgresql/data \
+  --volume postgresql_data2:/var/lib/postgresql \
   $CONTAINER_IMAGE)
 
 # Check if the container started successfully
