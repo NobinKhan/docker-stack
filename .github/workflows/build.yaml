@@ -59,7 +59,7 @@ jobs:
         run: |
           if [ "${{ github.event.inputs.image }}" = "postgres" ]; then
             docker pull ${{ env.POSTGRES_UPSTREAM_IMAGE }}
-            version=$(docker run --rm --user postgres --entrypoint postgres "$IMAGE" --version | awk '{print $NF}')
+            version=$(docker run --rm --user postgres --entrypoint postgres ${{ env.POSTGRES_UPSTREAM_IMAGE }} --version | awk '{print $NF}')
             echo "version=$version" >> $GITHUB_OUTPUT
             echo "image_short_name=postgres" >> $GITHUB_OUTPUT
           else
