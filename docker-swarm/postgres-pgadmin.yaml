@@ -1,45 +1,61 @@
 services:
   postgres:
-    image: postgres:15
+    image: nobinkhan/postgres:17.2
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
     environment:
-      POSTGRES_USER: internal_user
-      POSTGRES_PASSWORD: strongpassword
-      POSTGRES_DB: internal_db
+      POSTGRES_USER_FILE: /run/secrets/Postgres-Database-User
+      POSTGRES_PASSWORD_FILE: /run/secrets/Postgres-Database-Password
+      POSTGRES_DB: postgres
+    secrets:
+      - Postgres-Database-User
+      - Postgres-Database-Password
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - internal
-    deploy:
-      replicas: 1
-      update_config:
-        parallelism: 1
-      restart_policy:
-        condition: on-failure
-    secrets:
-      - postgres_password
 
   pgadmin:
-    image: dpage/pgadmin4:7
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@internal.local
-      PGADMIN_DEFAULT_PASSWORD: adminpassword
-    ports:
-      - "8080:80" # Expose only PgAdmin to manage the database
-    networks:
-      - internal
+    image: dpage/pgadmin4:latest
     deploy:
       replicas: 1
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
       restart_policy:
         condition: on-failure
-
-networks:
-  internal:
-    driver: overlay
+    environment:
+      PGADMIN_DEFAULT_EMAIL_FILE: /run/secrets/Pgadmin-Admin-Email
+      PGADMIN_DEFAULT_PASSWORD_FILE: /run/secrets/Pgadmin-Admin-Password
+    secrets:
+      - Pgadmin-Admin-Email
+      - Pgadmin-Admin-Password
+    ports:
+      - "8080:80" # Exposes pgAdmin on port 8080
+    networks:
+      - internal
 
 volumes:
   postgres_data:
 
 secrets:
-  postgres_password:
-    external: false
-    file: ./secrets/postgres_password.txt
+  Postgres-Database-User:
+    external: true
+  Postgres-Database-Password:
+    external: true
+
+  Pgadmin-Admin-Email:
+    external: true
+  Pgadmin-Admin-Password:
+    external: true
+
+networks:
+  internal:
+    driver: overlay
