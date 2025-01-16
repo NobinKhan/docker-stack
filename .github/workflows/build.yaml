@@ -6,14 +6,15 @@ on:
       image:
         description: "Select Docker Image"
         required: true
-        default: "postgresql-17"
+        default: "postgres"
         type: choice
         options:
-          - "postgresql-17"
+          - "postgres"
 
 env:
   GITHUB_IMAGE_REGISTRY: ghcr.io
   GITHUB_IMAGE_NAME: nobinkhan/docker-stack
+  POSTGRES_UPSTREAM_IMAGE: cgr.dev/chainguard/postgres:latest
 
 jobs:
   Build:
@@ -27,19 +28,6 @@ jobs:
     steps:
       - name: "Checkout Code"
         uses: "actions/checkout@v4"
-
-      - name: Image Short Name
-        id: image_short_name
-        run: |
-          short_name=$(echo "${{ github.event.inputs.image }}" | sed 's/-[0-9]*$//')
-          echo "image_short_name=${short_name}" >> $GITHUB_OUTPUT
-
-      - name: Extract Version from Image Input
-        id: extract-version
-        run: |
-          image="${{ github.event.inputs.image }}"
-          version=$(echo "$image" | grep -o '[0-9]*$')
-          echo "version=$version" >> $GITHUB_OUTPUT
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -66,21 +54,30 @@ jobs:
         with:
           images: ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.image_short_name.outputs.image_short_name }}
 
-      - name: Build and push to GitHub
+      - name: Extract Image Version
+        id: extract-version
+        run: |
+          if [ "${{ github.event.inputs.image }}" = "postgres" ]; then
+            docker pull ${{ env.POSTGRES_UPSTREAM_IMAGE }}
+            version=$(VERSION=$(docker run --rm --user postgres --entrypoint postgres "$IMAGE" --version | awk '{print $NF}')
+            echo "version=$version" >> $GITHUB_OUTPUT
+            echo "image_short_name=postgres" >> $GITHUB_OUTPUT
+          else
+            echo "nothing work with"
+            exit 1
+          fi
+
+      - name: Re-Tag and push to GitHub
         id: push-to-github
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./dockerfiles/Dockerfile.${{ steps.image_short_name.outputs.image_short_name }}
-          push: true
-          build-args: |
-            VERSION=${{ steps.extract-version.outputs.version }}
-          platforms: linux/amd64, linux/arm64
-          tags: |
-            ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.image_short_name.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}
-            ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.image_short_name.outputs.image_short_name }}:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.image_short_name.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.image_short_name.outputs.image_short_name }}:latest
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+        run: |
+          docker pull ${{ env.POSTGRES_UPSTREAM_IMAGE }}
+
+          docker tag ${{ env.POSTGRES_UPSTREAM_IMAGE }} ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.extract-version.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}-wolfi
+          docker tag ${{ env.POSTGRES_UPSTREAM_IMAGE }} ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.extract-version.outputs.image_short_name }}:latest
+          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.extract-version.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}-wolfi
+          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.extract-version.outputs.image_short_name }}:latest
+
+          docker push ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.image_short_name.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}-wolfi
+          docker push ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.image_short_name.outputs.image_short_name }}:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.extract-version.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}-wolfi
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.extract-version.outputs.image_short_name }}:latest

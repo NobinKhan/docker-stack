@@ -1,0 +1,45 @@
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: internal_user
+      POSTGRES_PASSWORD: strongpassword
+      POSTGRES_DB: internal_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+      restart_policy:
+        condition: on-failure
+    secrets:
+      - postgres_password
+
+  pgadmin:
+    image: dpage/pgadmin4:7
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@internal.local
+      PGADMIN_DEFAULT_PASSWORD: adminpassword
+    ports:
+      - "8080:80" # Expose only PgAdmin to manage the database
+    networks:
+      - internal
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+networks:
+  internal:
+    driver: overlay
+
+volumes:
+  postgres_data:
+
+secrets:
+  postgres_password:
+    external: false
+    file: ./secrets/postgres_password.txt
