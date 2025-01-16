@@ -74,8 +74,8 @@ jobs:
 
           docker tag ${{ env.POSTGRES_UPSTREAM_IMAGE }} ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.extract-version.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}-wolfi
           docker tag ${{ env.POSTGRES_UPSTREAM_IMAGE }} ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.extract-version.outputs.image_short_name }}:latest
-          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.extract-version.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}-wolfi
-          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.extract-version.outputs.image_short_name }}:latest
+          docker tag ${{ env.POSTGRES_UPSTREAM_IMAGE }} ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.extract-version.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}-wolfi
+          docker tag ${{ env.POSTGRES_UPSTREAM_IMAGE }} ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.extract-version.outputs.image_short_name }}:latest
 
           docker push ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.image_short_name.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}-wolfi
           docker push ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.image_short_name.outputs.image_short_name }}:latest
