@@ -1,0 +1,29 @@
+services:
+  rabbitmq:
+    image: rabbitmq:4.0.5-management-alpine
+    hostname: "rabbitmq-{{.Task.Slot}}"
+    networks:
+      - prod-net
+    configs:
+      - source: rabbitmq-config
+        target: /etc/rabbitmq/rabbitmq.conf
+    environment:
+      - RABBITMQ_ERLANG_COOKIE=SECRET_COOKIE
+      - RABBITMQ_USE_LONGNAME=true
+      - RABBITMQ_CLUSTER_PARTITION_HANDLING=autoheal
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: any
+    ports:
+      - 5672:5672
+      - 15672:15672
+      - 25672:25672
+
+networks:
+  prod-net:
+    external: true
+
+configs:
+  rabbitmq-config:
+    external: true
