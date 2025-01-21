@@ -3,7 +3,8 @@ services:
     image: rabbitmq:4.0.5-management-alpine
     hostname: "rabbitmq-{{.Task.Slot}}"
     networks:
-      - prod-net
+      - nginx_ingress
+      - rabbitmq-cluster
     configs:
       - source: rabbitmq-config
         target: /etc/rabbitmq/rabbitmq.conf
@@ -16,12 +17,14 @@ services:
       restart_policy:
         condition: any
     ports:
-      - 5672:5672
-      - 15672:15672
-      - 25672:25672
+      - 5672:5672  # AMQP port for inter-service communication
+      - 15672:15672  # Management UI port for external access
+      - 25672:25672  # RabbitMQ inter-node communication (internal)
 
 networks:
-  prod-net:
+  rabbitmq-cluster:
+    external: true
+  nginx_ingress:
     external: true
 
 configs:
