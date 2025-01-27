@@ -55,3 +55,36 @@ networks:
     external: true
   postgresql-database:
     external: true
+
+
+services:
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+    environment:
+      PGADMIN_DEFAULT_EMAIL: nazrulkhan.dk@gmail.com
+      PGADMIN_DEFAULT_PASSWORD_FILE: /run/secrets/Pgadmin-Admin-Password
+    secrets:
+      - Pgadmin-Admin-Password
+    networks:
+      - dokploy-network
+      - nginx_ingress
+    volumes:
+      - /mnt/pgadmin/data/:/var/lib/pgadmin
+
+secrets:
+  Pgadmin-Admin-Password:
+    external: true
+
+networks:
+  nginx_ingress:
+    external: true
+  dokploy-network:
+    external: true

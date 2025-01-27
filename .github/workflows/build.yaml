@@ -10,11 +10,18 @@ on:
         type: choice
         options:
           - "postgres"
+          - "saleor"
+      version:
+        description: "Select Docker Image Version"
+        required: true
+        default: "latest"
+        type: string
 
 env:
   GITHUB_IMAGE_REGISTRY: ghcr.io
   GITHUB_IMAGE_NAME: nobinkhan/docker-stack
   POSTGRES_UPSTREAM_IMAGE: cgr.dev/chainguard/postgres:latest
+  SALEOR_UPSTREAM_IMAGE: ghcr.io/saleor/saleor
 
 jobs:
   Build:
@@ -58,20 +65,32 @@ jobs:
             echo "image_short_name=postgres" >> $GITHUB_OUTPUT
           else
             echo "nothing to work with"
-            exit 1
           fi
 
       - name: Re-Tag and push to GitHub
         id: push-to-github
         run: |
-          docker pull ${{ env.POSTGRES_UPSTREAM_IMAGE }}
+          if [ "${{ github.event.inputs.image }}" = "postgres" ]; then
+            docker pull ${{ env.POSTGRES_UPSTREAM_IMAGE }}
 
-          docker tag ${{ env.POSTGRES_UPSTREAM_IMAGE }} ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.extract-version.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}-wolfi
-          docker tag ${{ env.POSTGRES_UPSTREAM_IMAGE }} ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.extract-version.outputs.image_short_name }}:latest
-          docker tag ${{ env.POSTGRES_UPSTREAM_IMAGE }} ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.extract-version.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}-wolfi
-          docker tag ${{ env.POSTGRES_UPSTREAM_IMAGE }} ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.extract-version.outputs.image_short_name }}:latest
+            docker tag ${{ env.POSTGRES_UPSTREAM_IMAGE }} ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.extract-version.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}-wolfi
+            docker tag ${{ env.POSTGRES_UPSTREAM_IMAGE }} ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.extract-version.outputs.image_short_name }}:latest
+            docker tag ${{ env.POSTGRES_UPSTREAM_IMAGE }} ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.extract-version.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}-wolfi
+            docker tag ${{ env.POSTGRES_UPSTREAM_IMAGE }} ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.extract-version.outputs.image_short_name }}:latest
 
-          docker push ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.extract-version.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}-wolfi
-          docker push ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.extract-version.outputs.image_short_name }}:latest
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.extract-version.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}-wolfi
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.extract-version.outputs.image_short_name }}:latest
+            docker push ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.extract-version.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}-wolfi
+            docker push ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.extract-version.outputs.image_short_name }}:latest
+            docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.extract-version.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}-wolfi
+            docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.extract-version.outputs.image_short_name }}:latest
+
+          elif [ "${{ github.event.inputs.image }}" = "saleor" ]; then
+            docker pull ${{ env.SALEOR_UPSTREAM_IMAGE }}
+
+            docker tag ${{ env.SALEOR_UPSTREAM_IMAGE }} ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ github.event.inputs.image }}:${{ github.event.inputs.version }}
+            docker tag ${{ env.SALEOR_UPSTREAM_IMAGE }} ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.inputs.image }}:${{ github.event.inputs.version }}
+
+            docker push ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ github.event.inputs.image }}:${{ github.event.inputs.version }}
+            docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.inputs.image }}:${{ github.event.inputs.version }}
+          else
+            echo "nothing to work with"
+          fi
