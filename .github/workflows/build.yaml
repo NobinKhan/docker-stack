@@ -11,6 +11,7 @@ on:
         options:
           - "postgres"
           - "saleor"
+          - "saleor-dashboard"
       version:
         description: "Select Docker Image Version"
         required: true
@@ -22,6 +23,7 @@ env:
   GITHUB_IMAGE_NAME: nobinkhan/docker-stack
   POSTGRES_UPSTREAM_IMAGE: cgr.dev/chainguard/postgres:latest
   SALEOR_UPSTREAM_IMAGE: ghcr.io/saleor/saleor
+  SALEOR_DASHBOARD_UPSTREAM_IMAGE: ghcr.io/saleor/saleor-dashboard
 
 jobs:
   Build:
@@ -91,6 +93,16 @@ jobs:
 
             docker push ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ github.event.inputs.image }}:${{ github.event.inputs.version }}
             docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.inputs.image }}:${{ github.event.inputs.version }}
+          
+          elif [ "${{ github.event.inputs.image }}" = "saleor-dashboard" ]; then
+            docker pull ${{ env.SALEOR_DASHBOARD_UPSTREAM_IMAGE }}
+
+            docker tag ${{ env.SALEOR_DASHBOARD_UPSTREAM_IMAGE }} ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ github.event.inputs.image }}:${{ github.event.inputs.version }}
+            docker tag ${{ env.SALEOR_DASHBOARD_UPSTREAM_IMAGE }} ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.inputs.image }}:${{ github.event.inputs.version }}
+
+            docker push ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ github.event.inputs.image }}:${{ github.event.inputs.version }}
+            docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.inputs.image }}:${{ github.event.inputs.version }}
+          
           else
             echo "nothing to work with"
           fi
