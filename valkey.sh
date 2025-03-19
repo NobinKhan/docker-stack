@@ -12,9 +12,9 @@ if ! command -v "podman" >/dev/null 2>&1 && ! command -v "docker" >/dev/null 2>&
 fi
 
 # Build docker image (corrected Dockerfile path and quoting)
-RUNNER=$(command -v podman || command -v docker)  # Use whichever is available
+RUNNER=$(command -v docker || command -v docker)  # Use whichever is available
 
-CONTAINER_IMAGE="chainguard/valkey:latest"
+CONTAINER_IMAGE="nobinkhan/redis:7.4.2-alpine3.21"
 CONTAINER_NAME="valkey"
 CONTAINER_PORT="6379"
 HOST_PORT="6379"
@@ -61,6 +61,7 @@ fi
 CONTAINER_ID=$($RUNNER run \
   --rm \
   --detach \
+  --sysctl vm.overcommit_memory=1 \
   --network $NETWORK_NAME \
   --name $CONTAINER_NAME \
   --publish $HOST_PORT:$CONTAINER_PORT \

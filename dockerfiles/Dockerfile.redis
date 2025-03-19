@@ -1,0 +1,15 @@
+FROM redis:7.4.2-alpine3.21
+
+RUN set -eux; \
+    apk update --no-cache ;\
+    apk upgrade --no-cache ;\
+    apk add --no-cache --virtual .build-deps curl ;\
+    echo "vm.overcommit_memory=1" >> /etc/sysctl.conf ;\
+    chmod 644 /etc/sysctl.conf ;\
+    mkdir -p /etc/redis ;\
+    curl -fsSL https://raw.githubusercontent.com/redis/redis/7.4/redis.conf -o /etc/redis/redis.conf ;\
+    apk del --no-network .build-deps ;\
+    chmod 644 /etc/redis/redis.conf && chown redis:redis /etc/redis/redis.conf
+
+EXPOSE 6379
+CMD ["sh","-c","redis-server /etc/redis/redis.conf"]

@@ -14,7 +14,7 @@ fi
 # Build docker image (corrected Dockerfile path and quoting)
 RUNNER=$(command -v docker || command -v podman)  # Use whichever is available
 
-CONTAINER_IMAGE="nobinkhan/postgres:latest"
+CONTAINER_IMAGE="nobinkhan/postgres:17.4-wolfi"
 CONTAINER_NAME="postgresql"
 CONTAINER_PORT="5432"
 HOST_PORT="5432"
