@@ -1,0 +1,46 @@
+services:
+  traefik:
+    image: traefik:v3.3
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /home/nobin/docker-containers/traefik/traefik-conf.yml:/traefik.yml:ro
+      - /home/nobin/docker-containers/traefik/acme.json:/acme.json
+      - /home/nobin/docker-containers/traefik/logs:/var/log/traefik
+      - traefik_certs:/data/certs
+    environment:
+      - CF_DNS_API_TOKEN=NMInSHzZkcBYhqNPvRTnL7jAPdAu55xOtKJgek1w
+    deploy:
+      mode: global
+      placement:
+        constraints: [node.role == manager]
+    networks:
+      - traefik-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "25:25"
+      - "465:465"
+      - "993:993"
+
+
+  traefik-certs-dumper:
+    image: ghcr.io/kereis/traefik-certs-dumper:latest
+    depends_on:
+      - traefik
+    volumes:
+      - traefik_certs:/traefik:ro
+      - certs:/output
+    deploy:
+      mode: replicated
+      replicas: 1
+    networks:
+      - traefik-proxy
+
+networks:
+  traefik-proxy:
+    external: true
+
+volumes:
+  traefik_certs:
+  certs:

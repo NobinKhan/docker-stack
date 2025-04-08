@@ -1,0 +1,34 @@
+services:
+  proxy:
+    image: image.koompi.org/library/pingora-proxy-server
+    ports:
+      - "80:80"
+      - "443:443"
+      - "81:81"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - certbot:/certbot
+      - acme-challenge:/var/www/html/.well-known/acme-challenge
+    environment:
+      - SWARM_MODE=true
+      - SWARM_NETWORKS=ingress
+      - LOG_LEVEL=info
+    restart: on-failure
+    deploy:
+      mode: global
+      placement:
+        constraints:
+          - node.role == manager
+      update_config:
+        parallelism: 1
+        delay: 10s
+    networks:
+      - revrse_proxy_proxy-network
+
+volumes:
+  acme-challenge:
+  certbot:
+
+networks:
+  revrse_proxy_proxy-network:
+    external: true
