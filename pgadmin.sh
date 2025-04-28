@@ -12,9 +12,9 @@ if ! command -v "podman" >/dev/null 2>&1 && ! command -v "docker" >/dev/null 2>&
 fi
 
 # Build docker image (corrected Dockerfile path and quoting)
-RUNNER=$(command -v docker || command -v podman)  # Use whichever is available
+RUNNER=$(command -v podman || command -v podman)  # Use whichever is available
 
-CONTAINER_IMAGE="dpage/pgadmin4:9.1.0"
+CONTAINER_IMAGE="dpage/pgadmin4:9.2.0"
 CONTAINER_NAME="pgadmin"
 CONTAINER_PORT="80"
 HOST_PORT="5050"
