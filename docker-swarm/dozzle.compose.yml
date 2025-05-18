@@ -1,0 +1,42 @@
+services:
+  dozzle:
+    image: amir20/dozzle:latest
+    environment:
+      - DOZZLE_MODE=swarm
+      - DOZZLE_AUTH_PROVIDER=simple
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    secrets:
+      - source: dozzle-users
+        target: /data/users.yml
+    deploy:
+      mode: global
+    networks:
+      - dozzle
+      - proxy-network
+      - portainer-network
+      - postgresql-network
+      - redis-network
+
+networks:
+  dozzle:
+    driver: overlay
+  proxy-network:
+    external: true
+  portainer-network:
+    external: true
+  postgresql-network:
+    external: true
+  redis-network:
+    external: true
+
+secrets:
+  dozzle-users:
+    external: true
+
+# users:
+#     admin:
+#         email: admin@barrzen.com
+#         name: Nazrul Islam Khan
+#         password: "$2a$12$Bo6kSQXxUjkk84lzyjf3fexsSPm7DMxWyon8Drtr0PY/0.MQC2tfS"
+#         filter: name=nobin

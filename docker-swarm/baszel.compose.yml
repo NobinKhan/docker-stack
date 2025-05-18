@@ -1,0 +1,38 @@
+services:
+  beszel:
+    image: henrygd/beszel:latest
+    networks:
+      - baszel-network
+      - proxy-network
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes:
+      - /root/docker_files/container_data/beszel_data:/beszel_data
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  beszel-agent:
+    image: henrygd/beszel-agent:latest
+    depends_on:
+      - beszel_beszel
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      PORT: 45876
+      # Do not remove quotes around the key
+      KEY: 'UPDATE WITH YOUR PUBLIC KEY (copy from "Add system" dialog)'
+    deploy:
+      mode: global
+      placement:
+        constraints: [node.platform.os == linux]
+    networks:
+      - baszel-network
+
+networks:
+  baszel-network:
+    external: true
+  proxy-network:
+    external: true

@@ -3,52 +3,35 @@ services:
     image: cgr.dev/chainguard/postgres:latest
     deploy:
       replicas: 1
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
       restart_policy:
         condition: on-failure
     environment:
       POSTGRES_DB: post-db
       POSTGRES_USER: post-user
-      POSTGRES_PASSWORD_FILE: /run/secrets/Postgres-Database-Password
-    secrets:
-      - Postgres-Database-Password
+      POSTGRES_PASSWORD: /run/secrets/Postgres-Database-Password
     volumes:
-      - /postgresql/data:/var/lib/postgresql/data
+      - /container_data/postgresql:/var/lib/postgresql/data
     networks:
-      - postgresql-database
+      - postgresql-network
+      - proxy-network
 
   pgadmin:
     image: dpage/pgadmin4:latest
     deploy:
       replicas: 1
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
       restart_policy:
         condition: on-failure
     environment:
       PGADMIN_DEFAULT_EMAIL: email.example.com
       PGADMIN_DEFAULT_PASSWORD_FILE: /run/secrets/Pgadmin-Admin-Password
-    secrets:
-      - Pgadmin-Admin-Password
     networks:
-      - postgresql-database
-      - proxy-networks
+      - postgresql-network
+      - proxy-network
     volumes:
-      - /pgadmin/data:/var/lib/pgadmin
-
-secrets:
-  Postgres-Database-Password:
-    external: true
-  Pgadmin-Admin-Password:
-    external: true
+      - /container_data/pgadmin:/var/lib/pgadmin
 
 networks:
-  proxy-networks:
+  proxy-network:
     external: true
-  postgresql-database:
+  postgresql-network:
     external: true

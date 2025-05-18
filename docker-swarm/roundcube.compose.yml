@@ -1,0 +1,48 @@
+services:
+  roundcubemail:
+    image: roundcube/roundcubemail:latest-fpm-alpine
+    environment:
+      - ROUNDCUBEMAIL_SKIN=elastic
+      - ROUNDCUBEMAIL_DEFAULT_HOST=ssl://mail.spacemail.com
+      - ROUNDCUBEMAIL_SMTP_SERVER=sss://mail.spacemail.com
+      - ROUNDCUBEMAIL_DEFAULT_PORT=993
+      - ROUNDCUBEMAIL_SMTP_PORT=465
+      - ROUNDCUBEMAIL_USERNAME_DOMAIN=urbansailors.com.br
+      - ROUNDCUBEMAIL_INSTALL_PLUGINS=1
+      - ROUNDCUBEMAIL_DB_TYPE=pgsql
+      - ROUNDCUBEMAIL_DB_HOST=postgres
+      - ROUNDCUBEMAIL_DB_PORT=5432
+      - ROUNDCUBEMAIL_DB_NAME=roundcubemail
+      - ROUNDCUBEMAIL_DB_USER=your_db_user
+      - ROUNDCUBEMAIL_DB_PASSWORD=your_db_password
+      - ROUNDCUBEMAIL_UPLOAD_MAX_FILESIZE=55M
+    networks:
+      - roundcube-mail
+    volumes:
+      - /root/docker_files/container_data/roundcube-webmail/www:/var/www/html
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+
+  roundcube-nginx:
+    image: nginx:alpine
+    networks:
+      - roundcube-mail
+      - proxy-network
+    environment:
+      - NGINX_HOST=mail.urbansailors.com.br
+      - NGINX_PHP_CGI=roundcubemail:9000
+    volumes:
+      - /root/docker_files/container_data/roundcube-webmail/www:/var/www/html
+      - /root/docker_files/container_data/roundcube-webmail/nginx-config/template:/etc/nginx/templates
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+
+networks:
+  roundcube-mail:
+    external: true
+  proxy-network:
+    external: true

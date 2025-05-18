@@ -3,16 +3,15 @@ services:
     image: cgr.dev/chainguard/valkey:latest
     deploy:
       replicas: 1
-      resources:
-        limits:
-          cpus: '1.5'
-          memory: 2048M
       restart_policy:
         condition: on-failure
     networks:
       - redis-network
     volumes:
-      - /root/docker_files/redis-valkey/data:/data
+      - redis-valkey-data:/data
+
+volumes:
+  redis-valkey-data:
 
 networks:
   redis-network:
