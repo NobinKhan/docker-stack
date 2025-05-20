@@ -1,12 +1,27 @@
 services:
   bugsink:
-    image: bugsink/bugsink
+    image: bugsink/bugsink:latest
     environment:
-      - SECRET_KEY=cyNpVa9N8bQAqu4FFc6WumWsYiK+p/ycZMi86IlmZ2dA495IvAkomx8JDKp/q2GH/2E=
+      - SECRET_KEY=IlmZ2dA495IvAkomx8JDKp/q2GH/2E=
       - CREATE_SUPERUSER=admin:admin
       - PORT=8000
+      - BEHIND_HTTPS_PROXY=True
+      - SITE_TITLE=Bug_Tracker
+      - BASE_URL=https://bugsink.com
+      - EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+      - EMAIL_HOST=mail.com
+      - EMAIL_HOST_USER=noreply@mail.com
+      - EMAIL_HOST_PASSWORD=f565BDBE943At5yh87
+      - EMAIL_PORT=465
+      - EMAIL_USE_TLS=False
+      - EMAIL_USE_SSL=True
+      - DEFAULT_FROM_EMAIL=noreply@mail.com
+      - USER_REGISTRATION_VERIFY_EMAIL=True
+      - USER_REGISTRATION_VERIFY_EMAIL_EXPIRY=600
+    volumes:
+      - /bugsink_data:/data
     networks:
-      - resom-saleor-backend
+      - backend
       - proxy-network
     deploy:
       replicas: 1
@@ -14,7 +29,7 @@ services:
         condition: any
 
 networks:
-  resom-saleor-backend:
+  backend:
     external: true
   proxy-network:
     external: true
