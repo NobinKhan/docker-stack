@@ -16,8 +16,6 @@ services:
 
   beszel-agent:
     image: henrygd/beszel-agent:latest
-    depends_on:
-      - beszel_beszel
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
