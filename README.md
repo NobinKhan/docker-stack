@@ -35,6 +35,11 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/NobinKhan/docker-stack/mai
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/NobinKhan/docker-stack/main/mac_install.sh)"
 ```
 
+### SSH Setup In New Ubuntu Server
+```sh
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/NobinKhan/docker-stack/main/server/ssh_setup.sh)"
+```
+
 ## Build Multiarch Image With Docker Buildx
 
 ### Docker Buildx Setup
@@ -65,28 +70,4 @@ podman run -it \
   --hostname mojoenv \
   --volume /run/media/nobin/Files/project:/home/nonroot/project \
   ubuntu:24.04
-```
-
-```bash
-docker run \
-  --name fief-server \
-  -p 8000:8000 \
-  -d \
-  -e "SECRET=yFgadJP1ExedXNVxqVOQjKwsmqebUpaQRE9wvJ_duZPdtldOxcZG5ED2IpfGAItMSbn7Tb-rx4SzFo3eX9-i_A" \
-  -e "FIEF_CLIENT_ID=8Yla4JSXUjqW3UA1ZUp0zSpceGeYU7xCuqSCJUBjfDg" \
-  -e "FIEF_CLIENT_SECRET=6Jv76jkTL8boUcBgx58yaL5PfHn-Q_MGUcrx0EYmBvs" \
-  -e "ENCRYPTION_KEY=Q5PeehTtcsd1feCOgNWZx_MCHAL354WWxEhzorvSUGI=" \
-  -e "PORT=8000" \
-  -e "FIEF_DOMAIN=localhost:8000" \
-  -e "FIEF_MAIN_USER_EMAIL=nazrul@care-box.com" \
-  -e "FIEF_MAIN_USER_PASSWORD=verysecurepassword" \
-  -e "CSRF_COOKIE_SECURE=False" \
-  -e "SESSION_DATA_COOKIE_SECURE=False" \
-  -e "USER_LOCALE_COOKIE_SECURE=False" \
-  -e "LOGIN_HINT_COOKIE_SECURE=False" \
-  -e "LOGIN_SESSION_COOKIE_SECURE=False" \
-  -e "REGISTRATION_SESSION_COOKIE_SECURE=False" \
-  -e "SESSION_COOKIE_SECURE=False" \
-  -e "FIEF_ADMIN_SESSION_COOKIE_SECURE=False" \
-  ghcr.io/fief-dev/fief:latest
 ```
