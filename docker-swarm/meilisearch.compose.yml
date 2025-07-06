@@ -1,6 +1,6 @@
 services:
   meilisearch:
-    image: getmeili/meilisearch:v1.15.1
+    image: getmeili/meilisearch:v1.15.2
     volumes:
       - meili_data:/meili_data
     environment:

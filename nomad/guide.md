@@ -43,7 +43,7 @@ sudo apt-get update && sudo apt-get install -y nomad consul
 We'll configure Consul to run as a single server. The `bootstrap_expect = 1` is key for a single-node setup.
 
 Create the configuration file:
-```bash
+
 sudo mkdir -p /etc/consul.d
 sudo touch /etc/consul.d/consul.hcl
 ```
@@ -264,33 +264,25 @@ Run the job: `nomad job run postgres.nomad`
 
 The job files for pgadmin and webapp are also the same. The key is that the `traefik.http.routers.*.tls.certresolver=le` tag tells Traefik to automatically get a certificate for the specified host using the "le" resolver we configured with the DNS challenge.
 
-## Step 7: The Scaling Strategy & Advanced Topics
+## Step 7: Advanced Topics and Next Steps
 
-### A. Adding a New Server
+This guide covers the basics of getting a single-node cluster running. For the next steps in your production journey, including scaling, security, and persistent storage, please see the following detailed guide:
 
-The process for adding new client nodes remains the same. The system job for Traefik ensures it will automatically run on any new node you add, making your ingress routing highly available.
+*   **[Advanced Guide: Nomad Variables and SeaweedFS Storage](./variables_and_storage_guide.md)**
+    *   Securely managing secrets (e.g., API tokens, database credentials) with Nomad's built-in variables.
+    *   Setting up a distributed and persistent storage layer with SeaweedFS and the official CSI driver.
 
-### B. Handling Persistent Data in a Multi-Node Cluster
+For your record the latest version:
+consul -v
+Consul v1.21.2
+Revision 136b9cb8
+Build Date 2025-06-18T08:16:39Z
 
-The host volume is a single point of failure and will not work if a stateful job (like Postgres) is rescheduled to another node. For a multi-node cluster, you need distributed storage.
+nomad -v
+Nomad v1.10.2
+BuildDate 2025-06-09T22:00:49Z
 
-*   **Simple Approach (NFS):** As described previously, NFS is a straightforward way to share a directory across all nodes. It's easy to set up but can be a performance bottleneck.
-
-*   **Modern Approach (CSI - Container Storage Interface):** The best practice for production is to use a CSI driver. CSI is a standard that allows storage vendors to develop plugins for container orchestrators like Nomad.
-    *   **How it works:** You install a CSI driver for your chosen storage backend onto your Nomad clients. When you request a volume in your job file, Nomad tells the driver to provision and attach storage. This is fully automated.
-    *   **Recommended Solutions:**
-        *   **GlusterFS / Ceph:** Robust, open-source distributed file systems. You would set up a GlusterFS/Ceph cluster on your nodes (or dedicated storage nodes) and then use the corresponding CSI driver in Nomad.
-        *   **SeaweedFS:** Another excellent open-source option, often simpler to manage than Ceph, with good performance and an S3-compatible API, which is a bonus for backups.
-        *   **Cloud Provider Volumes:** If you move to a cloud like AWS or GCP, you can use their CSI drivers to dynamically provision EBS or Persistent Disks.
-
-*   **Backup Strategy (e.g., to S3):** Regardless of your chosen storage, you should have a backup plan. You can run a periodic batch job in Nomad that uses a tool like `pg_dump` to back up your database and `rclone` or `s3cmd` to upload the backup to an S3-compatible object store.
-
-### C. Alternative Reverse Proxies
-
-While this guide uses Traefik for its seamless integration with Consul, you are right that other proxies are viable.
-
-*   **HAProxy:** Extremely fast and reliable, but typically requires a separate tool like `consul-template` to watch Consul for service changes and rewrite the HAProxy configuration file.
-*   **Nginx:** Similar to HAProxy, it's a rock-solid choice but needs an external tool for dynamic configuration based on service discovery.
-*   **Caddy Server:** A strong alternative to Traefik with automatic HTTPS that is also very easy to configure. It has plugins for Consul integration.
-
-For an environment where services are constantly being added, removed, or scaled, the tight integration of Traefik or Caddy often provides the smoothest operational experience.
+Can you please generate another Guide for me where you should use the latest version in mind so that configs don't get messed up. I need some extraa things and changes like below in this new guide.
+1. Securely managing secrets (e.g., API tokens, database credentials) with Nomad's built-in variables or vaoult (you can choose the better one for my case).
+2. Setting up a distributed and persistent storage layer with SeaweedFS and the official CSI driver. (when I will add more server it will help to distribute files or data also include how make a backup the data in s3 if it's possible)
+3. Traefik is very good reverse proxy but i personaly like haproxy. if think haproxy is also possible to use in our setup then replace traefik with haproxy and keep in mind that we need to configure ssl certs with cloudflare.

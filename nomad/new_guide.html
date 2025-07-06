@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Guide: The Enterprise Nomad Stack</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chosen Palette: Warm Stone & Sky -->
+    <!-- Application Structure Plan: The application transforms the linear guide into a thematic, interactive dashboard. A persistent top navigation (Overview, Core Services, Storage, etc.) allows non-linear exploration. This structure is better for both learning and quick reference, as users can jump directly to the component they're interested in. Key interactions include an interactive architecture diagram to visualize component relationships and a simulation of `consul-template` to demonstrate dynamic ingress, which are core concepts of the report that benefit from visual explanation. -->
+    <!-- Visualization & Content Choices: 
+        - Architecture Diagram: Report Info -> Component relationships -> Goal: Inform -> Viz: HTML/CSS diagram -> Interaction: Click for details -> Justification: Visualizing the full stack is more intuitive than text alone.
+        - Config Files: Report Info -> HCL/Nomad job files -> Goal: Inform/Detail -> Viz: Syntax-highlighted code blocks -> Interaction: Click-to-copy, JS-driven highlighting -> Justification: Improves readability and utility of core technical content.
+        - Consul-Template: Report Info -> HAProxy template logic -> Goal: Explain dynamic process -> Viz: Text block + button -> Interaction: JS simulation appends text -> Justification: Actively demonstrating a dynamic process is more effective than passively describing it.
+        - Tabbed Views: Report Info -> Grouped components (Consul/Vault, HAProxy/Certbot) -> Goal: Organize -> Viz: HTML/JS Tabs -> Interaction: Click to switch views -> Justification: Prevents information overload and logically groups related technologies.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+        .active-nav {
+            color: #0c4a6e; /* sky-800 */
+            font-weight: 500;
+            border-bottom-width: 2px;
+            border-color: #0c4a6e;
+        }
+        .inactive-nav {
+            color: #57534e; /* stone-600 */
+            border-bottom-width: 2px;
+            border-color: transparent;
+        }
+        .code-block {
+            background-color: #1c1917; /* stone-900 */
+            color: #f5f5f4; /* stone-100 */
+            padding: 1rem;
+            border-radius: 0.5rem;
+            position: relative;
+            overflow-x: auto;
+        }
+        .copy-button {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background-color: #44403c; /* stone-700 */
+            color: #e7e5e4; /* stone-200 */
+            border: none;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .copy-button:hover {
+            background-color: #57534e; /* stone-600 */
+        }
+        .section-title::before {
+            content: '#';
+            color: #0c4a6e; /* sky-800 */
+            margin-right: 0.5rem;
+            font-weight: 700;
+        }
+        .tab-button {
+            transition: all 0.2s ease-in-out;
+        }
+        .tab-button.active {
+            background-color: #0c4a6e; /* sky-800 */
+            color: white;
+        }
+        .tab-button.inactive {
+            background-color: #e7e5e4; /* stone-200 */
+            color: #44403c; /* stone-700 */
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .diagram-node {
+            border: 2px solid #a8a29e; /* stone-400 */
+            background-color: #fafaf9; /* stone-50 */
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            position: relative;
+            z-index: 10;
+        }
+        .diagram-node:hover {
+            border-color: #0c4a6e; /* sky-800 */
+            transform: scale(1.05);
+        }
+        .diagram-connector {
+            position: absolute;
+            background-color: #d6d3d1; /* stone-300 */
+            z-index: 1;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            max-width: 90%;
+            width: 500px;
+        }
+    </style>
+</head>
+<body class="bg-stone-100 text-stone-800 antialiased">
+
+    <!-- Header & Navigation -->
+    <header class="bg-stone-50/80 backdrop-blur-sm sticky top-0 z-40 border-b border-stone-200">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <h1 class="text-xl md:text-2xl font-bold text-sky-800">The Enterprise Nomad Stack</h1>
+                <nav class="hidden md:flex items-center space-x-6 text-sm">
+                    <a href="#overview" class="nav-link inactive-nav">Overview</a>
+                    <a href="#core-services" class="nav-link inactive-nav">Core Services</a>
+                    <a href="#storage" class="nav-link inactive-nav">Storage</a>
+                    <a href="#ingress" class="nav-link inactive-nav">Ingress</a>
+                    <a href="#deployment" class="nav-link inactive-nav">Deployment</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8 md:py-12">
+
+        <!-- Overview Section -->
+        <section id="overview" class="mb-16 scroll-mt-24">
+            <h2 class="section-title text-3xl font-bold mb-4">Architecture Overview</h2>
+            <p class="text-stone-600 mb-8 max-w-3xl">
+                This guide explores a production-grade application stack built on HashiCorp tools and other robust open-source projects. Instead of a linear guide, this dashboard allows you to explore the components interactively. Click on any component in the diagram below to learn more about its role in the ecosystem.
+            </p>
+            <div class="bg-white p-6 rounded-lg shadow-sm">
+                <h3 class="text-xl font-bold mb-6 text-center text-stone-700">Interactive System Diagram</h3>
+                <div id="architecture-diagram" class="relative h-[650px] md:h-[400px]">
+                    <!-- Nodes -->
+                    <div id="node-user" data-target="user" class="diagram-node absolute top-4 left-1/2 -translate-x-1/2">👤 User Request</div>
+                    <div id="node-cloudflare" data-target="cloudflare" class="diagram-node absolute top-24 left-1/2 -translate-x-1/2">🌩️ Cloudflare</div>
+                    <div id="node-haproxy" data-target="haproxy" class="diagram-node absolute top-[180px] md:top-1/2 md:-translate-y-1/2 left-4 w-32">🔄 HAProxy</div>
+                    <div id="node-nomad" data-target="nomad" class="diagram-node absolute bottom-[220px] md:bottom-auto md:top-1/2 md:-translate-y-1/2 left-1/2 -translate-x-1/2">🧠 Nomad</div>
+                    <div id="node-consul" data-target="consul" class="diagram-node absolute bottom-4 md:bottom-auto md:top-1/4 left-1/2 -translate-x-1/2">🗺️ Consul</div>
+                    <div id="node-vault" data-target="vault" class="diagram-node absolute bottom-24 md:bottom-auto md:top-3/4 left-1/2 -translate-x-1/2">🔑 Vault</div>
+                    <div id="node-app" data-target="app" class="diagram-node absolute top-[300px] md:top-1/2 md:-translate-y-1/2 right-4 w-32">🚀 App</div>
+                    <div id="node-seaweedfs" data-target="seaweedfs" class="diagram-node absolute bottom-[100px] md:bottom-auto md:top-1/2 md:-translate-y-1/2 right-4 w-32 transform md:translate-y-24">💾 SeaweedFS</div>
+
+                    <!-- Connectors will be drawn by JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Core Services Section -->
+        <section id="core-services" class="mb-16 scroll-mt-24">
+            <h2 class="section-title text-3xl font-bold mb-4">Core Services: Consul & Vault</h2>
+            <p class="text-stone-600 mb-8 max-w-3xl">
+                The foundation of our stack provides service discovery, configuration, and secrets management. Consul acts as the nervous system, while Vault is the secure safe for all credentials.
+            </p>
+            <div id="core-tabs" class="bg-white p-6 rounded-lg shadow-sm">
+                <div class="flex border-b border-stone-200 mb-6">
+                    <button class="tab-button py-2 px-4 rounded-t-md text-sm font-medium active" data-target="consul-tab">Consul</button>
+                    <button class="tab-button py-2 px-4 rounded-t-md text-sm font-medium inactive" data-target="vault-tab">Vault</button>
+                </div>
+                <div id="consul-tab" class="tab-content active">
+                    <h3 class="text-xl font-bold mb-2">Consul: Service Discovery</h3>
+                    <p class="text-stone-600 mb-4">Consul creates a service catalog that other applications can query to find the location of services. It's how HAProxy knows where to send traffic and how Vault stores its data.</p>
+                    <div class="code-block" data-code="consul.hcl"></div>
+                </div>
+                <div id="vault-tab" class="tab-content">
+                    <h3 class="text-xl font-bold mb-2">Vault: Secrets Management</h3>
+                    <p class="text-stone-600 mb-4">Vault securely stores and manages access to secrets like API tokens and database passwords. Jobs request credentials from Vault at runtime, so they are never hardcoded in configuration files.</p>
+                     <div class="code-block" data-code="vault.hcl"></div>
+                     <p class="text-stone-600 my-4">Jobs are then granted read-only access to specific secret paths via policies:</p>
+                     <div class="code-block" data-code="vault.policy"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Storage Section -->
+        <section id="storage" class="mb-16 scroll-mt-24">
+            <h2 class="section-title text-3xl font-bold mb-4">Distributed Storage: SeaweedFS</h2>
+            <p class="text-stone-600 mb-8 max-w-3xl">
+                For stateful applications like databases, we need persistent storage that can follow a job if it moves to another server. SeaweedFS provides this via a Container Storage Interface (CSI) driver, which allows Nomad to dynamically provision and manage storage volumes.
+            </p>
+            <div class="bg-white p-6 rounded-lg shadow-sm">
+                 <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="text-xl font-bold mb-2">SeaweedFS Service Job</h3>
+                        <p class="text-stone-600 mb-4">This `system` job runs the core SeaweedFS components (master, volume, filer) on every node in the cluster.</p>
+                        <div class="code-block" data-code="seaweedfs.nomad"></div>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold mb-2">CSI Driver Job</h3>
+                        <p class="text-stone-600 mb-4">This job deploys the CSI plugin that acts as the bridge between Nomad and SeaweedFS, enabling volume management.</p>
+                        <div class="code-block" data-code="seaweedfs-csi.nomad"></div>
+                    </div>
+                 </div>
+            </div>
+        </section>
+
+        <!-- Ingress Section -->
+        <section id="ingress" class="mb-16 scroll-mt-24">
+            <h2 class="section-title text-3xl font-bold mb-4">Ingress: HAProxy & SSL</h2>
+            <p class="text-stone-600 mb-8 max-w-3xl">
+                The ingress layer is responsible for routing external traffic to the correct services. We use HAProxy for its performance, `consul-template` to make it dynamic, and `certbot` to automate SSL certificates.
+            </p>
+             <div id="ingress-tabs" class="bg-white p-6 rounded-lg shadow-sm">
+                <div class="flex border-b border-stone-200 mb-6">
+                    <button class="tab-button py-2 px-4 rounded-t-md text-sm font-medium active" data-target="template-tab">Dynamic HAProxy Config</button>
+                    <button class="tab-button py-2 px-4 rounded-t-md text-sm font-medium inactive" data-target="certbot-tab">Automated SSL</button>
+                </div>
+                <div id="template-tab" class="tab-content active">
+                    <h3 class="text-xl font-bold mb-2">Consul Template Simulation</h3>
+                    <p class="text-stone-600 mb-4">The `consul-template` task watches Consul for services tagged with `haproxy.enable=true`. When a new service appears, it automatically regenerates the HAProxy configuration. Click the button to simulate a new service being deployed.</p>
+                    <div class="code-block" data-code="haproxy.tpl"></div>
+                    <button id="simulate-service-btn" class="mt-4 bg-sky-700 text-white font-medium py-2 px-4 rounded-md hover:bg-sky-800 transition-colors">
+                        Simulate New 'api' Service
+                    </button>
+                </div>
+                <div id="certbot-tab" class="tab-content">
+                     <h3 class="text-xl font-bold mb-2">Certbot & Vault Integration</h3>
+                    <p class="text-stone-600 mb-4">The `certbot` task runs alongside HAProxy. It uses a Vault `template` to securely fetch the Cloudflare API token needed to perform the DNS challenge for SSL certificate creation, without exposing the token in the job file.</p>
+                    <div class="code-block" data-code="certbot.task"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Deployment Section -->
+        <section id="deployment" class="scroll-mt-24">
+             <h2 class="section-title text-3xl font-bold mb-4">Example Deployment</h2>
+             <p class="text-stone-600 mb-8 max-w-3xl">
+                Finally, let's see how to deploy an application. We'll deploy a stateful Postgres database and a stateless web application, tying together all the concepts of storage, secrets, and service discovery.
+            </p>
+             <div class="grid md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <h3 class="text-xl font-bold mb-2">Stateful: PostgreSQL</h3>
+                    <p class="text-stone-600 mb-4">This job requests a persistent volume from the SeaweedFS CSI driver and injects its database password directly from Vault. It is not tagged for HAProxy, so it remains private.</p>
+                    <div class="code-block" data-code="postgres.nomad"></div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <h3 class="text-xl font-bold mb-2">Stateless: Web App</h3>
+                    <p class="text-stone-600 mb-4">This simple web app is tagged with `haproxy.enable=true`. `consul-template` will automatically detect it and configure HAProxy to route traffic to it from `webapp.your_domain.com`.</p>
+                    <div class="code-block" data-code="webapp.nomad"></div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+    
+    <!-- Modal -->
+    <div id="diagram-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 id="modal-title" class="text-2xl font-bold mb-4 text-sky-800"></h3>
+            <p id="modal-description" class="text-stone-600"></p>
+            <button id="close-modal-btn" class="mt-6 w-full bg-stone-200 text-stone-700 font-medium py-2 px-4 rounded-md hover:bg-stone-300 transition-colors">Close</button>
+        </div>
+    </div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    // --- Data Store ---
+    const codeSnippets = {
+        "consul.hcl": `data_dir = "/opt/consul"
+bind_addr = "{{ GetInterfaceIP \\"eth0\\" }}"
+client_addr = "127.0.0.1"
+server = true
+bootstrap_expect = 1
+ui_config {
+  enabled = true
+}`,
+        "vault.hcl": `ui = true
+listener "tcp" {
+  address     = "0.0.0.0:8200"
+  tls_disable = 1
+}
+storage "consul" {
+  address = "127.0.0.1:8500"
+  path    = "vault/"
+}`,
+        "vault.policy": `path "secret/data/cloudflare/*" {
+  capabilities = ["read"]
+}
+path "secret/data/postgres" {
+  capabilities = ["read"]
+}`,
+        "seaweedfs.nomad": `job "seaweedfs" {
+  type = "system"
+  group "seaweedfs" {
+    task "master" { /* ... */ }
+    task "volume" { /* ... */ }
+    task "filer" { /* ... */ }
+  }
+}`,
+        "seaweedfs-csi.nomad": `job "seaweedfs-csi" {
+  type = "system"
+  group "controller" {
+    task "plugin" {
+      driver = "docker"
+      csi_plugin {
+        id   = "seaweedfs"
+        type = "monolith"
+        /* ... */
+      }
+    }
+  }
+}`,
+        "haproxy.tpl": `global
+    daemon
+    maxconn 4096
+defaults
+    mode http
+    timeout connect 5s
+    timeout client 50s
+    timeout server 50s
+frontend http
+    bind *:80
+    http-request redirect scheme https unless { ssl_fc }
+frontend https
+    bind *:443 ssl crt /local/certs/
+    {{ range services }}
+    {{ if contains .Tags "haproxy.enable=true" }}
+    acl host_{{ .Name }} hdr(host) -i {{ .Name }}.your_domain.com
+    use_backend backend_{{ .Name }} if host_{{ .Name }}
+    {{ end }}
+    {{ end }}
+
+# --- Backends ---
+{{ range services }}
+{{ if contains .Tags "haproxy.enable=true" }}
+backend backend_{{ .Name }}
+    balance roundrobin
+    {{ range service .Name }}
+    server {{ .Node }}_{{ .Port }} {{ .Address }}:{{ .Port }} check
+    {{ end }}
+{{ end }}
+{{ end }}`,
+        "certbot.task": `task "certbot" {
+  driver = "docker"
+  config {
+    image = "certbot/dns-cloudflare"
+    command = "certonly"
+    args = [ /* ... */ ]
+  }
+  
+  # Inject Cloudflare token from Vault
+  template {
+    destination = "secrets/cloudflare.ini"
+    data = <<EOF
+dns_cloudflare_api_token = "{{ with secret \\"secret/data/cloudflare/dns\\" }}{{ .Data.data.token }}{{ end }}"
+EOF
+  }
+  
+  vault {
+    policies = ["nomad-jobs"]
+  }
+  
+  volume_mount {
+    volume      = "shared-data"
+    destination = "/etc/letsencrypt"
+  }
+}`,
+        "postgres.nomad": `job "postgres" {
+  group "db" {
+    volume "pgdata" {
+      type        = "csi"
+      source      = "postgres-volume"
+      access_mode = "single-node-writer"
+    }
+    task "postgres" {
+      volume_mount {
+        volume      = "pgdata"
+        destination = "/var/lib/postgresql/data"
+      }
+      template {
+        destination = "secrets/db.env"
+        env         = true
+        data = <<EOF
+POSTGRES_PASSWORD={{ with secret \\"secret/data/postgres\\" }}{{ .Data.data.password }}{{ end }}
+EOF
+      }
+      vault { policies = ["nomad-jobs"] }
+      service { name = "postgres" }
+    }
+  }
+}`,
+        "webapp.nomad": `job "webapp" {
+  group "app" {
+    count = 2
+    task "server" {
+      driver = "docker"
+      service {
+        name = "webapp"
+        port = "http"
+        tags = ["haproxy.enable=true"]
+      }
+    }
+  }
+}`
+    };
+
+    const modalData = {
+        user: { title: "User Request", description: "The flow begins with a user making a request to a service, for example, webapp.your_domain.com." },
+        cloudflare: { title: "Cloudflare", description: "Cloudflare receives the request, provides DDoS protection and CDN services, and forwards the traffic to our server's public IP address. It handles the DNS resolution." },
+        haproxy: { title: "HAProxy Ingress", description: "HAProxy, our reverse proxy, listens on ports 80 and 443. It terminates SSL and, based on its dynamic configuration, routes the request to the correct backend application." },
+        nomad: { title: "Nomad Orchestrator", description: "Nomad is the cluster's brain. It schedules and manages the lifecycle of all jobs, including applications, HAProxy, and even the storage system. It integrates with Vault and Consul." },
+        consul: { title: "Consul Service Discovery", description: "Consul maintains a real-time catalog of all running services. HAProxy queries Consul (via consul-template) to discover where to send traffic. Vault also uses Consul for its storage backend." },
+        vault: { title: "Vault Secrets Management", description: "Vault provides secrets to Nomad jobs at runtime. For example, it gives Postgres its password and Certbot its Cloudflare API token, keeping credentials out of code." },
+        app: { title: "Application (e.g., Web App)", description: "A service running as a Nomad job. It's registered in Consul, and if tagged correctly, it becomes discoverable by HAProxy, which then routes traffic to it." },
+        seaweedfs: { title: "SeaweedFS Storage", description: "Provides persistent, distributed storage. When a stateful job like a database needs to run, Nomad tells the SeaweedFS CSI driver to create and attach a volume, ensuring data is safe even if the job moves to another machine." }
+    };
+
+    // --- Code Block Initialization ---
+    document.querySelectorAll('.code-block').forEach(block => {
+        const codeKey = block.getAttribute('data-code');
+        if (codeSnippets[codeKey]) {
+            const pre = document.createElement('pre');
+            const code = document.createElement('code');
+            code.textContent = codeSnippets[codeKey];
+            pre.appendChild(code);
+            block.appendChild(pre);
+
+            const button = document.createElement('button');
+            button.textContent = 'Copy';
+            button.className = 'copy-button';
+            button.onclick = () => {
+                navigator.clipboard.writeText(codeSnippets[codeKey]).then(() => {
+                    button.textContent = 'Copied!';
+                    setTimeout(() => { button.textContent = 'Copy'; }, 2000);
+                });
+            };
+            block.appendChild(button);
+        }
+    });
+
+    // --- Tab Functionality ---
+    function setupTabs(containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        const tabButtons = container.querySelectorAll('.tab-button');
+        const tabContents = container.querySelectorAll('.tab-content');
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetId = button.getAttribute('data-target');
+                
+                tabButtons.forEach(btn => {
+                    btn.classList.remove('active');
+                    btn.classList.add('inactive');
+                });
+                button.classList.add('active');
+                button.classList.remove('inactive');
+
+                tabContents.forEach(content => {
+                    content.classList.remove('active');
+                    if (content.id === targetId) {
+                        content.classList.add('active');
+                    }
+                });
+            });
+        });
+    }
+    setupTabs('core-tabs');
+    setupTabs('ingress-tabs');
+    
+    // --- Consul Template Simulation ---
+    const simulateBtn = document.getElementById('simulate-service-btn');
+    const haproxyTplBlock = document.querySelector('[data-code="haproxy.tpl"] code');
+    let simulationAdded = false;
+
+    if (simulateBtn && haproxyTplBlock) {
+        const originalTpl = haproxyTplBlock.textContent;
+        const newServiceTpl = `
+backend backend_api
+    balance roundrobin
+    server node1_8080 10.0.1.5:8080 check
+`;
+        simulateBtn.addEventListener('click', () => {
+            if (!simulationAdded) {
+                haproxyTplBlock.textContent += newServiceTpl;
+                simulationAdded = true;
+                simulateBtn.textContent = "Reset Simulation";
+                simulateBtn.classList.add('bg-amber-600', 'hover:bg-amber-700');
+                simulateBtn.classList.remove('bg-sky-700', 'hover:bg-sky-800');
+            } else {
+                haproxyTplBlock.textContent = originalTpl;
+                simulationAdded = false;
+                simulateBtn.textContent = "Simulate New 'api' Service";
+                simulateBtn.classList.remove('bg-amber-600', 'hover:bg-amber-700');
+                simulateBtn.classList.add('bg-sky-700', 'hover:bg-sky-800');
+            }
+        });
+    }
+
+    // --- Architecture Diagram & Modal ---
+    const diagram = document.getElementById('architecture-diagram');
+    const modal = document.getElementById('diagram-modal');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const modalTitle = document.getElementById('modal-title');
+    const modalDescription = document.getElementById('modal-description');
+
+    document.querySelectorAll('.diagram-node').forEach(node => {
+        node.addEventListener('click', (e) => {
+            const target = e.currentTarget.getAttribute('data-target');
+            const data = modalData[target];
+            if (data) {
+                modalTitle.textContent = data.title;
+                modalDescription.textContent = data.description;
+                modal.classList.remove('hidden');
+            }
+        });
+    });
+
+    const closeModal = () => modal.classList.add('hidden');
+    closeModalBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+
+    // --- Draw Diagram Connectors ---
+    function drawConnector(fromId, toId, options = {}) {
+        const fromEl = document.getElementById(fromId);
+        const toEl = document.getElementById(toId);
+        if (!fromEl || !toEl || !diagram) return;
+
+        const fromRect = fromEl.getBoundingClientRect();
+        const toRect = toEl.getBoundingClientRect();
+        const diagramRect = diagram.getBoundingClientRect();
+
+        const from = {
+            x: fromRect.left + fromRect.width / 2 - diagramRect.left,
+            y: fromRect.top + fromRect.height / 2 - diagramRect.top
+        };
+        const to = {
+            x: toRect.left + toRect.width / 2 - diagramRect.left,
+            y: toRect.top + toRect.height / 2 - diagramRect.top
+        };
+        
+        const line = document.createElement('div');
+        line.className = 'diagram-connector';
+        const length = Math.sqrt(Math.pow(to.x - from.x, 2) + Math.pow(to.y - from.y, 2));
+        const angle = Math.atan2(to.y - from.y, to.x - from.x) * 180 / Math.PI;
+
+        line.style.width = `${length}px`;
+        line.style.height = '2px';
+        line.style.left = `${from.x}px`;
+        line.style.top = `${from.y}px`;
+        line.style.transform = `rotate(${angle}deg)`;
+        line.style.transformOrigin = '0 0';
+        diagram.appendChild(line);
+    }
+    
+    function drawAllConnectors() {
+        diagram.querySelectorAll('.diagram-connector').forEach(c => c.remove());
+        drawConnector('node-user', 'node-cloudflare');
+        drawConnector('node-cloudflare', 'node-haproxy');
+        drawConnector('node-haproxy', 'node-app');
+        drawConnector('node-app', 'node-nomad');
+        drawConnector('node-haproxy', 'node-nomad');
+        drawConnector('node-nomad', 'node-consul');
+        drawConnector('node-nomad', 'node-vault');
+        drawConnector('node-nomad', 'node-seaweedfs');
+        drawConnector('node-app', 'node-seaweedfs');
+        drawConnector('node-vault', 'node-consul');
+    }
+
+    // Debounce resize events
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(drawAllConnectors, 150);
+    });
+
+    drawAllConnectors();
+
+
+    // --- Active Nav Link Scrolling ---
+    const navLinks = document.querySelectorAll('.nav-link');
+    const sections = document.querySelectorAll('section');
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                navLinks.forEach(link => {
+                    link.classList.remove('active-nav');
+                    link.classList.add('inactive-nav');
+                    if (link.getAttribute('href').substring(1) === entry.target.id) {
+                        link.classList.add('active-nav');
+                        link.classList.remove('inactive-nav');
+                    }
+                });
+            }
+        });
+    }, { rootMargin: "-30% 0px -70% 0px" });
+
+    sections.forEach(section => {
+        observer.observe(section);
+    });
+});
+</script>
+</body>
+</html>

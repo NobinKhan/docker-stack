@@ -1,16 +1,16 @@
 services:
   postgres:
-    image: cgr.dev/chainguard/postgres:latest
+    image: nobinkhan/postgres:17.5-wolfi
     deploy:
       replicas: 1
       restart_policy:
         condition: on-failure
     environment:
-      POSTGRES_DB: post-db
-      POSTGRES_USER: post-user
-      POSTGRES_PASSWORD: /run/secrets/Postgres-Database-Password
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - /container_data/postgresql:/var/lib/postgresql/data
+      - ./data/postgresql:/var/lib/postgresql/data
     networks:
       - postgresql-network
       - proxy-network
@@ -22,15 +22,18 @@ services:
       restart_policy:
         condition: on-failure
     environment:
-      PGADMIN_DEFAULT_EMAIL: email.example.com
-      PGADMIN_DEFAULT_PASSWORD_FILE: /run/secrets/Pgadmin-Admin-Password
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
     networks:
       - postgresql-network
       - proxy-network
+      - nginx-proxy-db
     volumes:
-      - /container_data/pgadmin:/var/lib/pgadmin
+      - ./data/pgadmin:/var/lib/pgadmin
 
 networks:
+  nginx-proxy-db:
+    external: true
   proxy-network:
     external: true
   postgresql-network:

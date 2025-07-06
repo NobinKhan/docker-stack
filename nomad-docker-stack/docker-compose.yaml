@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  consul:
+    image: hashicorp/consul:1.18
+    container_name: consul
+    ports:
+      - "8500:8500" # Consul UI & API
+    volumes:
+      - ./config/consul:/consul/config
+      - consul_data:/consul/data
+    command: "agent -server -bootstrap-expect=1 -ui -client=0.0.0.0 -data-dir=/consul/data -config-dir=/consul/config"
+
+  vault:
+    image: hashicorp/vault:1.16
+    container_name: vault
+    ports:
+      - "8200:8200" # Vault UI & API
+    volumes:
+      - ./config/vault:/vault/config
+      - vault_data:/vault/file
+    environment:
+      VAULT_ADDR: http://127.0.0.1:8200
+    cap_add:
+      - IPC_LOCK
+    depends_on:
+      - consul
+    command: "server -config=/vault/config/vault.json"
+
+  nomad:
+    image: hashicorp/nomad:1.7.7
+    container_name: nomad
+    ports:
+      - "4646:4646" # Nomad UI & API
+      - "4647:4647" # Nomad RPC
+      - "4648:4648" # Nomad Serf
+    volumes:
+      - ./config/nomad:/etc/nomad.d
+      - ./jobs:/jobs
+      - /var/run/docker.sock:/var/run/docker.sock
+      - nomad_data:/opt/nomad
+    command: "agent -config=/etc/nomad.d"
+    depends_on:
+      - consul
+      - vault
+
+volumes:
+  consul_data:
+  vault_data:
+  nomad_data:

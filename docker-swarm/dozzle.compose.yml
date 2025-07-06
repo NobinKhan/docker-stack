@@ -12,22 +12,13 @@ services:
     deploy:
       mode: global
     networks:
-      - dozzle
+      - dozzle-network
       - proxy-network
-      - portainer-network
-      - postgresql-network
-      - redis-network
 
 networks:
-  dozzle:
+  dozzle-network:
     driver: overlay
   proxy-network:
-    external: true
-  portainer-network:
-    external: true
-  postgresql-network:
-    external: true
-  redis-network:
     external: true
 
 secrets:
