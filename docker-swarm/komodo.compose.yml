@@ -1,0 +1,67 @@
+services:
+  mongo:
+    image: mongo
+    command: --quiet --wiredTigerCacheSizeGB 0.25
+    volumes:
+      - mongo-data:/data/db
+      - mongo-config:/data/configdb
+    env_file: ./komodo.env
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${KOMODO_DB_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${KOMODO_DB_PASSWORD}
+    deploy:
+      restart_policy:
+        condition: 'any'
+      # It's good practice to place stateful services like a database on a specific node,
+      # for example, a manager node, to ensure data consistency and predictable performance.
+      # placement:
+      #   constraints:
+      #     - node.role == manager
+    labels:
+      komodo.skip: "" # Prevent Komodo from stopping with StopAllContainers
+
+  core:
+    image: ghcr.io/moghtech/komodo-core:${COMPOSE_KOMODO_IMAGE_TAG:-latest}
+    # The 'depends_on' key is ignored in Swarm mode. Services should be designed
+    # to be resilient and handle connection failures if a dependency is not ready.
+    ports:
+      - 9120:9120
+    env_file: ./komodo.env
+    environment:
+      KOMODO_DATABASE_ADDRESS: mongo:27017
+      KOMODO_DATABASE_USERNAME: ${KOMODO_DB_USERNAME}
+      KOMODO_DATABASE_PASSWORD: ${KOMODO_DB_PASSWORD}
+    volumes:
+      - repo-cache:/repo-cache
+      # - /path/to/syncs:/syncs
+      # - /path/to/core.config.toml:/config/config.toml
+    deploy:
+      restart_policy:
+        condition: 'any'
+    labels:
+      komodo.skip: "" # Prevent Komodo from stopping with StopAllContainers
+
+  periphery:
+    image: ghcr.io/moghtech/komodo-periphery:${COMPOSE_KOMODO_IMAGE_TAG:-latest}
+    env_file: ./komodo.env
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /proc:/proc
+      - ${PERIPHERY_ROOT_DIRECTORY:-/etc/komodo}:${PERIPHERY_ROOT_DIRECTORY:-/etc/komodo}
+    deploy:
+      # This service requires access to the Docker socket to manage containers.
+      # In a Swarm cluster, it must run on a manager node.
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: 'any'
+    labels:
+      komodo.skip: "" # Prevent Komodo from stopping with StopAllContainers
+
+volumes:
+  # Mongo Volumes
+  mongo-data:
+  mongo-config:
+  # Core Volume
+  repo-cache:
