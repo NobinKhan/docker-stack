@@ -20,24 +20,34 @@ https://agola.io/
 https://github.com/theSage21/jaypore_ci
 https://www.jayporeci.in
 
+### Setup Linux User
+```sh
+curl -fsSL https://raw.githubusercontent.com/NobinKhan/docker-stack/main/scripts/linux_user_setup.sh | sh
+```
+
+### Setup Docker In Linux
+```sh
+curl -fsSL https://get.docker.com | sh
+```
+
 ### Linux Command To Install zsh themes and tools
 ```sh
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/NobinKhan/docker-stack/main/linux_install.sh)"
+curl -fsSL https://raw.githubusercontent.com/NobinKhan/docker-stack/main/linux_install.sh | sh
 ```
 
 ### Linux version-2 Command To Install zsh themes and tools
 ```sh
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/NobinKhan/docker-stack/main/terminal_config.sh)"
+curl -fsSL https://raw.githubusercontent.com/NobinKhan/docker-stack/main/terminal_config.sh | sh
 ```
 
 ### MacOS Command To Install zsh themes and tools
 ```sh
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/NobinKhan/docker-stack/main/mac_install.sh)"
+curl -fsSL https://raw.githubusercontent.com/NobinKhan/docker-stack/main/mac_install.sh | sh
 ```
 
 ### SSH Setup In New Ubuntu Server
 ```sh
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/NobinKhan/docker-stack/main/server/ssh_setup.sh)"
+curl -fsSL https://raw.githubusercontent.com/NobinKhan/docker-stack/main/server/ssh_setup.sh | sh
 ```
 
 ## Build Multiarch Image With Docker Buildx

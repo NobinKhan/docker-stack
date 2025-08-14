@@ -1,0 +1,786 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>K3s Cluster Deployment Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Playfair+Display:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <style>
+        :root {
+            --primary: #0f0f0f;
+            --secondary: #1a1a1a;
+            --accent: #d4af37;
+            --text: #e6e6e6;
+            --text-muted: #999999;
+            --border: #333333;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--primary);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        .serif {
+            font-family: 'Playfair Display', serif;
+        }
+        
+        .hero-gradient {
+            background: linear-gradient(135deg, rgba(15, 15, 15, 0.95) 0%, rgba(26, 26, 26, 0.9) 100%);
+        }
+        
+        .glow {
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+        }
+        
+        .code-block {
+            background: var(--secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            position: relative;
+        }
+        
+        .code-block::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        }
+        
+        .citation {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .citation:hover {
+            color: #f0d78c;
+            text-decoration: underline;
+        }
+        
+        .toc-fixed {
+            position: fixed;
+            left: 2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 280px;
+            max-height: 70vh;
+            overflow-y: auto;
+            z-index: 40;
+            background: rgba(15, 15, 15, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+        
+        .main-content {
+            margin-left: 320px;
+            max-width: 900px;
+        }
+        
+        .step-card {
+            background: var(--secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .step-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 8px 32px rgba(212, 175, 55, 0.1);
+        }
+        
+        .progress-indicator {
+            background: linear-gradient(90deg, var(--accent) 0%, #f0d78c 100%);
+            height: 3px;
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+        
+        @media (max-width: 1024px) {
+            .toc-fixed {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 280px;
+                height: 100vh;
+                transform: none;
+                margin-bottom: 0;
+                z-index: 50;
+                border-radius: 0;
+                border-left: none;
+                border-top: none;
+                border-bottom: none;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            .main-content > section:first-child {
+                padding-top: 4rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero-title {
+                font-size: 2rem;
+            }
+            .code-block pre {
+                overflow-x: auto;
+            }
+        }
+    </style>
+  </head>
+
+  <body class="bg-gray-900 text-gray-100">
+    <!-- Fixed Table of Contents -->
+    <nav class="toc-fixed">
+      <div class="flex flex-col space-y-4">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-semibold text-accent serif">Contents</h3>
+          <button id="toc-close" class="lg:hidden text-gray-400 hover:text-white">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <button class="toc-link text-sm text-left py-1 px-2 rounded hover:bg-gray-800 transition-colors w-full" data-target="hero">Overview</button>
+        <button class="toc-link text-sm text-left py-1 px-2 rounded hover:bg-gray-800 transition-colors w-full" data-target="initial-config">1. Initial VPS Configuration</button>
+        <button class="toc-link text-sm text-left py-1 px-2 rounded hover:bg-gray-800 transition-colors w-full" data-target="cloudflare">2. Cloudflare Setup</button>
+        <button class="toc-link text-sm text-left py-1 px-2 rounded hover:bg-gray-800 transition-colors w-full" data-target="metallb-ingress">3. MetalLB &amp; Ingress</button>
+        <button class="toc-link text-sm text-left py-1 px-2 rounded hover:bg-gray-800 transition-colors w-full" data-target="longhorn">4. Longhorn Storage</button>
+        <button class="toc-link text-sm text-left py-1 px-2 rounded hover:bg-gray-800 transition-colors w-full" data-target="applications">5. Example Applications</button>
+      </div>
+      <div class="mt-4 pt-4 border-t border-gray-700">
+        <div class="text-xs text-gray-400">
+          <div class="mb-2">Progress:</div>
+          <div class="w-full bg-gray-700 rounded-full h-2">
+            <div class="progress-indicator w-0" id="progress-bar"></div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Hamburger menu for mobile -->
+    <button id="toc-toggle" class="fixed top-4 left-4 z-50 p-2 bg-gray-800 rounded-lg shadow-lg lg:hidden">
+      <i class="fas fa-bars text-accent"></i>
+    </button>
+
+    <!-- Main Content -->
+    <main class="main-content px-6 py-12">
+      <!-- Hero Section -->
+      <section id="hero" class="mb-16">
+        <div class="hero-gradient rounded-2xl p-6 md:p-12 relative overflow-hidden">
+          <div class="absolute inset-0 opacity-10">
+            <img src="https://kimi-web-img.moonshot.cn/img/www.appviewx.com/d777bd1e2a32f0b9b90d0b2a768cb4c04efb906b.png" alt="Abstract Kubernetes cluster network" class="w-full h-full object-cover" size="wallpaper" aspect="wide" query="kubernetes cluster abstract" referrerpolicy="no-referrer" data-modified="1" data-score="0.00"/>
+          </div>
+          <div class="relative z-10">
+            <div class="flex flex-col gap-8 items-center">
+              <div class="flex-1">
+                <h1 class="text-5xl lg:text-6xl font-bold serif mb-6 leading-tight">
+                  <span class="text-accent">K3s</span> Cluster
+                  <br/>
+                  <em class="text-gray-300">Deployment Guide</em>
+                </h1>
+                <p class="text-xl text-gray-300 mb-8 max-w-2xl">
+                  A comprehensive guide to deploying a production-ready K3s cluster on VPS instances with MetalLB, Longhorn, and enterprise-grade ingress controllers.
+                </p>
+                <div class="flex flex-wrap gap-4 text-sm text-gray-400">
+                  <span><i class="fas fa-server mr-2"></i>Ubuntu 24 + Rocky 9</span>
+                  <span><i class="fas fa-globe mr-2"></i>Cloudflare Integration</span>
+                  <span><i class="fas fa-database mr-2"></i>Longhorn Storage</span>
+                </div>
+              </div>
+              <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                <div class="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+                  <div class="text-accent text-3xl mb-2"><i class="fas fa-rocket"></i></div>
+                  <h3 class="font-semibold mb-2">Rapid Deployment</h3>
+                  <p class="text-sm text-gray-400">Streamlined setup with automated scripts and best practices.</p>
+                </div>
+                <div class="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+                  <div class="text-accent text-3xl mb-2"><i class="fas fa-shield-alt"></i></div>
+                  <h3 class="font-semibold mb-2">Production Ready</h3>
+                  <p class="text-sm text-gray-400">Enterprise-grade security and performance configurations.</p>
+                </div>
+                <div class="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+                  <div class="text-accent text-3xl mb-2"><i class="fas fa-network-wired"></i></div>
+                  <h3 class="font-semibold mb-2">Network Integration</h3>
+                  <p class="text-sm text-gray-400">Seamless MetalLB and ingress controller setup.</p>
+                </div>
+                <div class="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+                  <div class="text-accent text-3xl mb-2"><i class="fas fa-hdd"></i></div>
+                  <h3 class="font-semibold mb-2">Storage Management</h3>
+                  <p class="text-sm text-gray-400">Longhorn distributed storage with high availability.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 1: Initial VPS Configuration -->
+      <section id="initial-config" class="mb-16">
+        <div class="flex items-center mb-8">
+          <div class="w-12 h-12 bg-accent rounded-full flex items-center justify-center mr-4">
+            <span class="text-gray-900 font-bold">1</span>
+          </div>
+          <h2 class="text-3xl font-bold serif">Initial VPS Configuration &amp; K3s Installation</h2>
+        </div>
+
+        <div class="step-card p-8 mb-8">
+          <h3 class="text-xl font-semibold mb-4 text-accent">Pre-configuration Essentials</h3>
+          <p class="mb-6 text-gray-300">Before installing K3s, both VPS instances require essential pre-configuration including unique hostnames, passwordless SSH, system updates, and firewall configuration.</p>
+
+          <div class="grid md:grid-cols-2 gap-6 mb-8">
+            <div>
+              <h4 class="font-semibold mb-3">Server Node (Ubuntu 24.04)</h4>
+              <div class="code-block p-4 mb-4">
+                <pre class="text-sm"><code>sudo hostnamectl set-hostname k3s-server
+echo &#34;127.0.1.1 k3s-server&#34; | sudo tee -a /etc/hosts
+
+sudo apt update &amp;&amp; sudo apt upgrade -y
+sudo apt install -y curl
+
+sudo swapoff -a
+sudo sed -i &#39;/swap/s/^/#/&#39; /etc/fstab
+
+sudo ufw allow 6443/tcp
+sudo ufw allow 22/tcp
+sudo ufw enable</code></pre>
+              </div>
+            </div>
+            <div>
+              <h4 class="font-semibold mb-3">Agent Node (Rocky 9)</h4>
+              <div class="code-block p-4 mb-4">
+                <pre class="text-sm"><code>sudo hostnamectl set-hostname k3s-agent
+echo &#34;127.0.1.1 k3s-agent&#34; | sudo tee -a /etc/hosts
+
+sudo dnf update -y
+sudo dnf install -y curl
+
+sudo swapoff -a
+sudo sed -i &#39;/swap/s/^/#/&#39; /etc/fstab
+
+sudo firewall-cmd --permanent --add-port=6443/tcp
+sudo firewall-cmd --permanent --add-service=ssh
+sudo firewall-cmd --reload</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-yellow-900/20 border border-yellow-700/30 rounded-lg p-4 mb-6">
+            <div class="flex items-start">
+              <i class="fas fa-exclamation-triangle text-yellow-400 mt-1 mr-3"></i>
+              <div>
+                <h4 class="font-semibold text-yellow-300 mb-2">Rocky Linux 9 Specific Consideration</h4>
+                <p class="text-sm text-gray-300">On RHEL-based systems like Rocky Linux 9, you may encounter cgroup issues. <a href="https://forums.rancher.cn/t/rocky-linux-9-1-k3s-1-19/3984" class="citation">[172]</a> Add kernel parameters before installation:</p>
+                <div class="code-block p-4 mt-3">
+                  <pre class="text-sm"><code>sudo grubby --args=&#34;cgroup_memory=1 cgroup_enable=memory&#34; --update-kernel=&#34;$(grubby --default-kernel)&#34;
+sudo reboot</code></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-card p-8 mb-8">
+          <h3 class="text-xl font-semibold mb-4 text-accent">K3s Server Installation</h3>
+          <p class="mb-6 text-gray-300">Install K3s on the Ubuntu server node, retrieve the node token, and configure kubectl access.</p>
+
+          <div class="code-block p-4 mb-6">
+            <pre class="text-sm"><code># Install K3s server
+curl -sfL https://get.k3s.io | sh -
+
+# Verify service status
+sudo systemctl status k3s
+
+# Retrieve node token
+sudo cat /var/lib/rancher/k3s/server/node-token
+
+# Configure kubectl
+mkdir -p ~/.kube
+sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+sudo chown $USER:$USER ~/.kube/config</code></pre>
+          </div>
+        </div>
+
+        <div class="step-card p-8">
+          <h3 class="text-xl font-semibold mb-4 text-accent">Agent Node Joining</h3>
+          <p class="mb-6 text-gray-300">Join the Rocky Linux agent node to the cluster using the retrieved node token.</p>
+
+          <div class="code-block p-4 mb-6">
+            <pre class="text-sm"><code># Join agent to cluster
+curl -sfL https://get.k3s.io | \
+  K3S_URL=https://&lt;SERVER_IP&gt;:6443 \
+  K3S_TOKEN=&lt;NODE_TOKEN&gt; sh -
+
+# Verify cluster status
+kubectl get nodes</code></pre>
+          </div>
+
+          <div class="bg-green-900/20 border border-green-700/30 rounded-lg p-4">
+            <div class="flex items-center">
+              <i class="fas fa-check-circle text-green-400 mr-3"></i>
+              <span class="text-sm text-gray-300">Both nodes should show status &#34;Ready&#34; in the cluster</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 2: Cloudflare Configuration -->
+      <section id="cloudflare" class="mb-16">
+        <div class="flex items-center mb-8">
+          <div class="w-12 h-12 bg-accent rounded-full flex items-center justify-center mr-4">
+            <span class="text-gray-900 font-bold">2</span>
+          </div>
+          <h2 class="text-3xl font-bold serif">Cloudflare Configuration for barrzen.com</h2>
+        </div>
+
+        <div class="step-card p-8 mb-8">
+          <h3 class="text-xl font-semibold mb-4 text-accent">Domain Setup &amp; DNS Configuration</h3>
+          <p class="mb-6 text-gray-300">Configure Cloudflare to route traffic for your domain through their global network, providing enhanced security and performance.</p>
+
+          <div class="space-y-6">
+            <div>
+              <h4 class="font-semibold mb-3">1. Create Cloudflare Account</h4>
+              <p class="text-sm text-gray-400 mb-4">Sign up for a free Cloudflare account and add your domain.</p>
+            </div>
+
+            <div>
+              <h4 class="font-semibold mb-3">2. Update Nameservers</h4>
+              <p class="text-sm text-gray-400 mb-4">Replace your domain registrar&#39;s nameservers with Cloudflare&#39;s provided nameservers.</p>
+            </div>
+
+            <div>
+              <h4 class="font-semibold mb-3">3. Configure DNS Records</h4>
+              <div class="bg-gray-800/50 rounded-lg p-4">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-2 text-sm">
+                  <div class="font-mono">Type</div>
+                  <div class="font-mono">Name</div>
+                  <div class="font-mono">Value</div>
+                  <div class="font-mono">Proxy</div>
+                  <div class="font-mono border-t border-gray-700 pt-2">A</div>
+                  <div class="font-mono border-t border-gray-700 pt-2">@</div>
+                  <div class="font-mono border-t border-gray-700 pt-2">VPS_IP</div>
+                  <div class="font-mono border-t border-gray-700 pt-2">🟠 ON</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-card p-8">
+          <h3 class="text-xl font-semibold mb-4 text-accent">SSL/TLS Configuration</h3>
+          <p class="mb-6 text-gray-300">Enable full SSL/TLS encryption for secure communication between Cloudflare and your origin server.</p>
+
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="bg-blue-900/20 border border-blue-700/30 rounded-lg p-4">
+              <h4 class="font-semibold text-blue-300 mb-2">SSL/TLS Mode</h4>
+              <p class="text-sm text-gray-300">Set to &#34;Full (Strict)&#34; for end-to-end encryption</p>
+            </div>
+            <div class="bg-blue-900/20 border border-blue-700/30 rounded-lg p-4">
+              <h4 class="font-semibold text-blue-300 mb-2">Origin Certificates</h4>
+              <p class="text-sm text-gray-300">Generate and install Cloudflare Origin CA certificates</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 3: MetalLB and Ingress -->
+      <section id="metallb-ingress" class="mb-16">
+        <div class="flex items-center mb-8">
+          <div class="w-12 h-12 bg-accent rounded-full flex items-center justify-center mr-4">
+            <span class="text-gray-900 font-bold">3</span>
+          </div>
+          <h2 class="text-3xl font-bold serif">MetalLB and Ingress Controllers</h2>
+        </div>
+
+        <div class="step-card p-8 mb-8">
+          <h3 class="text-xl font-semibold mb-4 text-accent">Installation Order: Why MetalLB First</h3>
+          <p class="mb-6 text-gray-300">MetalLB must be installed before ingress controllers to provide external IP addresses for LoadBalancer services. <a href="https://two-oes.medium.com/k3s-with-haproxy-ingress-and-metal-lb-550078e2c4f2" class="citation">[94]</a>
+          </p>
+
+          <div class="bg-gray-800/50 rounded-lg p-6 mb-6">
+            <div class="flex items-center mb-4">
+              <div class="w-8 h-8 bg-accent rounded-full flex items-center justify-center mr-3 text-gray-900 font-bold">1</div>
+              <h4 class="font-semibold">MetalLB Installation</h4>
+            </div>
+            <p class="text-sm text-gray-400 mb-4">Provides LoadBalancer IP allocation infrastructure</p>
+            <div class="code-block p-4">
+              <pre class="text-sm"><code># Enable strictARP for kube-proxy
+kubectl get configmap kube-proxy -n kube-system -o yaml | \
+  sed -e &#34;s/strictARP: false/strictARP: true/&#34; | \
+  kubectl apply -f - -n kube-system
+
+# Install MetalLB
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/main/config/manifests/metallb-native.yaml
+
+# Verify installation
+kubectl get pods -n metallb-system</code></pre>
+            </div>
+          </div>
+
+          <div class="bg-gray-800/50 rounded-lg p-6">
+            <div class="flex items-center mb-4">
+              <div class="w-8 h-8 bg-accent rounded-full flex items-center justify-center mr-3 text-gray-900 font-bold">2</div>
+              <h4 class="font-semibold">Configure IP Address Pool</h4>
+            </div>
+            <p class="text-sm text-gray-400 mb-4">Define available IP range for LoadBalancer services <a href="https://vuyisile.com/building-a-kubernetes-cluster-from-scratch-with-k3s-and-metallb/" class="citation">[114]</a>
+            </p>
+            <div class="code-block p-4">
+              <pre class="text-sm"><code># metallb-config.yaml
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: first-pool
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.0.2.100-192.0.2.110
+
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: example
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - first-pool
+
+# Apply configuration
+kubectl apply -f metallb-config.yaml</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-8">
+          <div class="step-card p-8">
+            <h3 class="text-xl font-semibold mb-4 text-accent">Nginx Ingress Controller</h3>
+            <p class="mb-4 text-gray-300 text-sm">Recommended for most use cases with extensive feature support.</p>
+
+            <div class="code-block p-4 mb-4">
+              <pre class="text-sm"><code># Add Helm repository
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo update
+
+# Install Nginx Ingress
+helm install nginx-ingress ingress-nginx/ingress-nginx \
+  --namespace ingress-nginx \
+  --create-namespace
+
+# Configure for MetalLB
+kubectl patch svc ingress-nginx-controller \
+  -n ingress-nginx \
+  -p &#39;{&#34;spec&#34;:{&#34;type&#34;:&#34;LoadBalancer&#34;}}&#39;</code></pre>
+            </div>
+          </div>
+
+          <div class="step-card p-8">
+            <h3 class="text-xl font-semibold mb-4 text-accent">HAProxy Ingress Controller</h3>
+            <p class="mb-4 text-gray-300 text-sm">Alternative for high-performance requirements and advanced load balancing.</p>
+
+            <div class="code-block p-4 mb-4">
+              <pre class="text-sm"><code># Add Helm repository
+helm repo add haproxytech https://haproxytech.github.io/helm-charts
+helm repo update
+
+# Install HAProxy Ingress
+helm upgrade -i haproxy haproxytech/kubernetes-ingress \
+  --create-namespace \
+  --namespace haproxy-ingress
+
+# Configure for MetalLB
+kubectl patch svc haproxy-kubernetes-ingress \
+  -n haproxy-ingress \
+  -p &#39;{&#34;spec&#34;:{&#34;type&#34;:&#34;LoadBalancer&#34;}}&#39;</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 4: Longhorn -->
+      <section id="longhorn" class="mb-16">
+        <div class="flex items-center mb-8">
+          <div class="w-12 h-12 bg-accent rounded-full flex items-center justify-center mr-4">
+            <span class="text-gray-900 font-bold">4</span>
+          </div>
+          <h2 class="text-3xl font-bold serif">Longhorn Distributed Storage</h2>
+        </div>
+
+        <div class="step-card p-8 mb-8">
+          <h3 class="text-xl font-semibold mb-4 text-accent">Installation &amp; Prerequisites</h3>
+          <p class="mb-6 text-gray-300">Longhorn provides enterprise-grade persistent storage with replication and backup capabilities. <a href="https://docs.k3s.io/storage" class="citation">[118]</a>
+          </p>
+
+          <div class="bg-gray-800/50 rounded-lg p-6 mb-6">
+            <h4 class="font-semibold mb-3">Install Prerequisites on All Nodes</h4>
+            <div class="grid md:grid-cols-2 gap-4">
+              <div>
+                <p class="text-sm text-gray-400 mb-2">Ubuntu 24.04:</p>
+                <div class="code-block p-3">
+                  <pre class="text-xs"><code>sudo apt update
+sudo apt install -y open-iscsi nfs-common
+sudo systemctl enable iscsid
+sudo systemctl start iscsid</code></pre>
+                </div>
+              </div>
+              <div>
+                <p class="text-sm text-gray-400 mb-2">Rocky 9:</p>
+                <div class="code-block p-3">
+                  <pre class="text-xs"><code>sudo dnf install -y iscsi-initiator-utils nfs-utils
+sudo systemctl enable iscsid
+sudo systemctl start iscsid</code></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="code-block p-4 mb-6">
+            <pre class="text-sm"><code># Install Longhorn
+kubectl apply -f https://raw.githubusercontent.com/longhorn/longhorn/v1.8.1/deploy/longhorn.yaml
+
+# Verify installation
+kubectl get pods -n longhorn-system
+kubectl get crds | grep longhorn</code></pre>
+          </div>
+
+          <div class="bg-blue-900/20 border border-blue-700/30 rounded-lg p-4">
+            <h4 class="font-semibold text-blue-300 mb-2">Alternative: Helm Installation</h4>
+            <p class="text-sm text-gray-300">For more control over configuration parameters: <a href="https://medium.com/@stevenhoang/step-by-step-guide-hosting-longhorn-on-k3s-arm-2328283d7244" class="citation">[120]</a>
+            </p>
+          </div>
+        </div>
+
+        <div class="step-card p-8 mb-8">
+          <h3 class="text-xl font-semibold mb-4 text-accent">Configuration &amp; Management</h3>
+
+          <div class="grid md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <h4 class="font-semibold mb-3">Access Longhorn UI</h4>
+              <div class="code-block p-4">
+                <pre class="text-sm"><code># Port-forward to access UI
+kubectl port-forward -n longhorn-system \
+  svc/longhorn-frontend 8080:80
+
+# Access at http://localhost:8080</code></pre>
+              </div>
+            </div>
+            <div>
+              <h4 class="font-semibold mb-3">Set as Default Storage</h4>
+              <div class="code-block p-4">
+                <pre class="text-sm"><code># Unset local-path as default
+kubectl patch storageclass local-path -p \
+  &#39;{&#34;metadata&#34;: {&#34;annotations&#34;:{&#34;storageclass.kubernetes.io/is-default-class&#34;:&#34;false&#34;}}}&#39;
+
+# Set Longhorn as default
+kubectl patch storageclass longhorn -p \
+  &#39;{&#34;metadata&#34;: {&#34;annotations&#34;:{&#34;storageclass.kubernetes.io/is-default-class&#34;:&#34;true&#34;}}}&#39;</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-green-900/20 border border-green-700/30 rounded-lg p-4">
+            <h4 class="font-semibold text-green-300 mb-2">Persistent Volume Example</h4>
+            <p class="text-sm text-gray-300 mb-3">Create a PVC for database applications: <a href="https://docs.k3s.io/storage" class="citation">[126]</a>
+            </p>
+            <div class="code-block p-3">
+              <pre class="text-xs"><code>apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: db-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 10Gi</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 5: Example Applications -->
+      <section id="applications" class="mb-16">
+        <div class="flex items-center mb-8">
+          <div class="w-12 h-12 bg-accent rounded-full flex items-center justify-center mr-4">
+            <span class="text-gray-900 font-bold">5</span>
+          </div>
+          <h2 class="text-3xl font-bold serif">Production Application Deployment</h2>
+        </div>
+
+        <div class="space-y-8">
+          <div class="step-card p-8">
+            <h3 class="text-xl font-semibold mb-4 text-accent">Rancher Cluster Management</h3>
+            <p class="mb-6 text-gray-300">Deploy Rancher for comprehensive Kubernetes cluster management with web UI and multi-cluster support.</p>
+
+            <div class="grid md:grid-cols-2 gap-6">
+              <div>
+                <h4 class="font-semibold mb-3">1. Install cert-manager</h4>
+                <div class="code-block p-4">
+                  <pre class="text-sm"><code>helm repo add jetstack https://charts.jetstack.io
+helm repo update
+
+helm install cert-manager jetstack/cert-manager \
+  --namespace cert-manager \
+  --create-namespace \
+  --version v1.14.2 \
+  --set installCRDs=true</code></pre>
+                </div>
+              </div>
+              <div>
+                <h4 class="font-semibold mb-3">2. Deploy Rancher</h4>
+                <div class="code-block p-4">
+                  <pre class="text-sm"><code>helm repo add rancher-latest https://releases.rancher.com/server-charts/latest
+kubectl create namespace cattle-system
+
+helm install rancher rancher-latest/rancher \
+  --namespace cattle-system \
+  --set hostname=rancher.barrzen.com \
+  --set bootstrapPassword=admin \
+  --set ingress.tls.source=letsEncrypt</code></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-8">
+            <div class="step-card p-8">
+              <h3 class="text-xl font-semibold mb-4 text-accent">PostgreSQL Database</h3>
+              <p class="mb-4 text-gray-300 text-sm">Stateful database deployment with persistent storage and high availability.</p>
+
+              <div class="code-block p-4 mb-4">
+                <pre class="text-sm"><code># Create secret for PostgreSQL password
+kubectl create secret generic postgres-secret \
+  --from-literal=password=mysecurepassword
+
+# Deploy StatefulSet with Longhorn storage
+kubectl apply -f postgres-statefulset.yaml</code></pre>
+              </div>
+
+              <div class="bg-blue-900/20 border border-blue-700/30 rounded-lg p-3">
+                <p class="text-xs text-gray-300">Uses Longhorn persistent volumes for data storage</p>
+              </div>
+            </div>
+
+            <div class="step-card p-8">
+              <h3 class="text-xl font-semibold mb-4 text-accent">Redis Cache</h3>
+              <p class="mb-4 text-gray-300 text-sm">High-performance in-memory cache with persistence options.</p>
+
+              <div class="code-block p-4 mb-4">
+                <pre class="text-sm"><code># Create PVC for Redis data
+kubectl apply -f redis-pvc.yaml
+
+# Deploy Redis with persistent storage
+kubectl apply -f redis-deployment.yaml
+
+# Expose Redis service
+kubectl apply -f redis-service.yaml</code></pre>
+              </div>
+
+              <div class="bg-blue-900/20 border border-blue-700/30 rounded-lg p-3">
+                <p class="text-xs text-gray-300">Configurable persistence for data durability</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="step-card p-8">
+            <h3 class="text-xl font-semibold mb-4 text-accent">Verification &amp; Monitoring</h3>
+            <p class="mb-6 text-gray-300">Ensure all applications are running correctly and accessible through the ingress controller.</p>
+
+            <div class="grid md:grid-cols-3 gap-4">
+              <div class="bg-gray-800/50 rounded-lg p-4">
+                <h4 class="font-semibold mb-2">Check Pod Status</h4>
+                <div class="code-block p-3">
+                  <pre class="text-xs"><code>kubectl get pods --all-namespaces</code></pre>
+                </div>
+              </div>
+              <div class="bg-gray-800/50 rounded-lg p-4">
+                <h4 class="font-semibold mb-2">Verify Services</h4>
+                <div class="code-block p-3">
+                  <pre class="text-xs"><code>kubectl get svc --all-namespaces</code></pre>
+                </div>
+              </div>
+              <div class="bg-gray-800/50 rounded-lg p-4">
+                <h4 class="font-semibold mb-2">Test Ingress</h4>
+                <div class="code-block p-3">
+                  <pre class="text-xs"><code>curl -I https://rancher.barrzen.com</code></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+        // Smooth scrolling for TOC links
+        document.querySelectorAll('.toc-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = link.getAttribute('data-target');
+                const targetElement = document.getElementById(targetId);
+                if (targetElement) {
+                    targetElement.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                    
+                    // Hide TOC on mobile after clicking a link
+                    if (window.innerWidth <= 1024) {
+                        document.querySelector('.toc-fixed').classList.add('hidden');
+                    }
+                }
+            });
+        });
+
+        // Progress indicator
+        function updateProgress() {
+            const sections = document.querySelectorAll('section[id]');
+            const scrollPosition = window.scrollY + window.innerHeight / 2;
+            
+            let currentSection = 0;
+            sections.forEach((section, index) => {
+                if (scrollPosition >= section.offsetTop) {
+                    currentSection = index;
+                }
+            });
+            
+            const progress = ((currentSection + 1) / sections.length) * 100;
+            document.getElementById('progress-bar').style.width = progress + '%';
+        }
+
+        window.addEventListener('scroll', updateProgress);
+        updateProgress();
+
+        // Toggle TOC on mobile
+        document.getElementById('toc-toggle').addEventListener('click', () => {
+            const toc = document.querySelector('.toc-fixed');
+            toc.classList.toggle('hidden');
+        });
+
+        document.getElementById('toc-close').addEventListener('click', () => {
+            document.querySelector('.toc-fixed').classList.add('hidden');
+        });
+
+        // Hide TOC on mobile by default
+        if (window.innerWidth <= 1024) {
+            document.querySelector('.toc-fixed').classList.add('hidden');
+        }
+    </script>
+  
+
+</body></html>
