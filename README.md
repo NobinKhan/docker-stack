@@ -22,9 +22,7 @@ https://www.jayporeci.in
 
 ### Setup Linux User
 ```sh
-curl -fsSL -o linux_user_setup.sh
-     https://raw.githubusercontent.com/NobinKhan/docker-stack/main/scripts/linux_user_setup.sh && chmod +x linux_user_setup.sh
-     && sudo ./linux_user_setup.sh
+curl -fsSL https://raw.githubusercontent.com/NobinKhan/docker-stack/main/scripts/linux_user_setup.sh -o linux_user_setup.sh && chmod +x linux_user_setup.sh && sudo ./linux_user_setup.sh
 ```
 
 ### Setup Docker In Linux
