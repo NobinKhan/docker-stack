@@ -22,32 +22,32 @@ https://www.jayporeci.in
 
 ### Setup Linux User
 ```sh
-curl -fsSL https://raw.githubusercontent.com/NobinKhan/docker-stack/main/scripts/linux_user_setup.sh | sh
+curl -fsSL https://raw.githubusercontent.com/NobinKhan/docker-stack/main/scripts/linux_user_setup.sh | bash
 ```
 
 ### Setup Docker In Linux
 ```sh
-curl -fsSL https://get.docker.com | sh
+curl -fsSL https://get.docker.com | bash
 ```
 
 ### Linux Command To Install zsh themes and tools
 ```sh
-curl -fsSL https://raw.githubusercontent.com/NobinKhan/docker-stack/main/linux_install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/NobinKhan/docker-stack/main/linux_install.sh | bash
 ```
 
 ### Linux version-2 Command To Install zsh themes and tools
 ```sh
-curl -fsSL https://raw.githubusercontent.com/NobinKhan/docker-stack/main/terminal_config.sh | sh
+curl -fsSL https://raw.githubusercontent.com/NobinKhan/docker-stack/main/terminal_config.sh | bash
 ```
 
 ### MacOS Command To Install zsh themes and tools
 ```sh
-curl -fsSL https://raw.githubusercontent.com/NobinKhan/docker-stack/main/mac_install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/NobinKhan/docker-stack/main/mac_install.sh | bash
 ```
 
 ### SSH Setup In New Ubuntu Server
 ```sh
-curl -fsSL https://raw.githubusercontent.com/NobinKhan/docker-stack/main/server/ssh_setup.sh | sh
+curl -fsSL https://raw.githubusercontent.com/NobinKhan/docker-stack/main/server/ssh_setup.sh | bash
 ```
 
 ## Build Multiarch Image With Docker Buildx

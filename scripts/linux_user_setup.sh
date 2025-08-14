@@ -20,10 +20,6 @@
 # Exit immediately if a command exits with a non-zero status.
 set -e
 
-# --- Global Variables ---
-# We declare 'new_username' here so it can be accessed in the final message.
-new_username=""
-
 # --- Sanity Checks ---
 
 # Check if the script is being run as root.
@@ -38,6 +34,28 @@ if [ -z "$BASH_VERSION" ]; then
     exit 1
 fi
 
+# --- Helper Functions ---
+
+# Function to validate a Linux username
+is_valid_username() {
+    local username=$1
+    if [[ "$username" =~ ^[a-z_][a-z0-9_-]*[$]?$ ]] && [ ${#username} -le 32 ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Function to validate a hostname
+is_valid_hostname() {
+    local hostname=$1
+    if [[ "$hostname" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$ ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
 # --- Main Functions ---
 
 # Function to change the system hostname
@@ -49,13 +67,22 @@ change_hostname() {
     case "$choice" in
       y|Y )
         read -p "Enter the new hostname: " new_hostname
-        if [ -z "$new_hostname" ]; then
-            echo "❌ Hostname cannot be empty. Skipping."
+        if ! is_valid_hostname "$new_hostname"; then
+            echo "❌ Invalid hostname format. Skipping." >&2
             return
         fi
+
+        if [ "$(hostname)" == "$new_hostname" ]; then
+            echo "✅ Hostname is already set to '$new_hostname'. No changes needed."
+            return
+        fi
+
         echo "Setting hostname to '$new_hostname'..."
-        hostnamectl set-hostname "$new_hostname"
-        echo "✅ Hostname changed successfully. Current hostname: $(hostname)"
+        if hostnamectl set-hostname "$new_hostname"; then
+            echo "✅ Hostname changed successfully. Current hostname: $(hostname)"
+        else
+            echo "❌ Failed to set hostname." >&2
+        fi
         ;;
       * )
         echo "Skipping hostname change."
@@ -73,12 +100,11 @@ change_root_password() {
     case "$choice" in
       y|Y )
         echo "You will now be prompted to set a new password for the 'root' user."
-        # Ensure we are in an interactive terminal before running passwd
         if [ -t 0 ]; then
             passwd root
             echo "✅ Root password has been updated successfully."
         else
-            echo "❌ Cannot change password in a non-interactive shell. Skipping."
+            echo "❌ Cannot change password in a non-interactive shell. Skipping." >&2
         fi
         ;;
       * )
@@ -96,32 +122,35 @@ create_sudo_user() {
     read -p "Do you want to create a new sudo user? [y/N]: " choice
     case "$choice" in
       y|Y )
-        # Get username from user input
         read -p "Enter the username for the new user: " username
-        if [ -z "$username" ]; then
-            echo "❌ Username cannot be empty. Aborting user creation." >&2
+        if ! is_valid_username "$username"; then
+            echo "❌ Invalid username format. Aborting user creation." >&2
             return
         fi
-        # Set the global variable for the final message
-        new_username=$username
 
-        # Check if user already exists
         if id "$username" &>/dev/null; then
             echo "⚠️ User '$username' already exists. Skipping user creation."
         else
             echo "Creating user '$username'..."
-            useradd -m -s /bin/bash "$username"
-            echo "✅ User '$username' created."
+            if useradd -m -s /bin/bash "$username"; then
+                echo "✅ User '$username' created."
+            else
+                echo "❌ Failed to create user '$username'." >&2
+                return
+            fi
         fi
 
         echo "You will now be prompted to set a password for '$username'."
-        passwd "$username"
+        if [ -t 0 ]; then
+            passwd "$username"
+        else
+            echo "❌ Cannot change password in a non-interactive shell. Skipping password setup." >&2
+        fi
 
         echo "-------------------------------------------------"
         echo "🔐 Setting up SSH access for '$username'..."
         echo "-------------------------------------------------"
 
-        # Get public SSH key from user input
         read -p "Paste the public SSH key for '$username': " ssh_public_key
         if [ -z "$ssh_public_key" ]; then
             echo "❌ SSH public key cannot be empty. Aborting SSH setup." >&2
@@ -136,7 +165,6 @@ create_sudo_user() {
         mkdir -p "$ssh_dir"
         echo "$ssh_public_key" > "$authorized_keys_file"
 
-        # Set correct permissions and ownership
         chmod 700 "$ssh_dir"
         chmod 600 "$authorized_keys_file"
         chown -R "$username:$username" "$ssh_dir"
@@ -146,12 +174,20 @@ create_sudo_user() {
         echo "-------------------------------------------------"
         echo "🛡️ Granting passwordless sudo access..."
         echo "-------------------------------------------------"
+        echo "⚠️  WARNING: This will grant user '$username' the ability to run any command as root without a password."
+        read -p "Are you sure you want to proceed? [y/N]: " sudo_choice
+        if [[ "$sudo_choice" != "y" && "$sudo_choice" != "Y" ]]; then
+            echo "Skipping sudo access grant."
+            echo "$username" # Return username for the final message
+            return
+        fi
 
         local sudoers_file="/etc/sudoers.d/$username"
         echo "$username ALL=(ALL) NOPASSWD: ALL" > "$sudoers_file"
         chmod 0440 "$sudoers_file"
 
         echo "✅ User '$username' has been granted passwordless sudo access."
+        echo "$username" # Return username for the final message
         ;;
       * )
         echo "Skipping user creation."
@@ -165,7 +201,8 @@ create_sudo_user() {
 main() {
     change_hostname
     change_root_password
-    create_sudo_user
+    local new_username
+    new_username=$(create_sudo_user)
 
     echo "================================================="
     echo "🎉 All selected tasks completed! 🎉"
@@ -177,3 +214,4 @@ main() {
 
 # Run the main function
 main
+
