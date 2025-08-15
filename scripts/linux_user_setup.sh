@@ -421,9 +421,6 @@ main() {
     echo "================================================="
     echo "🎉 All selected tasks completed! 🎉"
     echo "================================================="
-    if [ -n "$new_username" ]; then
-        echo "You can now log in as '$new_username' using your SSH key."
-    fi
 }
 
 # Run the main function
