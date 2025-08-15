@@ -57,6 +57,50 @@ is_valid_hostname() {
     fi
 }
 
+# Function to detect, install, and enable a firewall
+setup_firewall() {
+    source /etc/os-release
+    local os_id=$ID
+    local firewall_tool="none"
+
+    # Check for existing firewall tools
+    if command -v firewall-cmd &> /dev/null; then
+        firewall_tool="firewalld"
+        if ! systemctl is-active --quiet firewalld; then
+            echo "Firewalld is installed but not active. Enabling..."
+            systemctl enable --now firewalld
+            echo "✅ Firewalld enabled."
+        fi
+    elif command -v ufw &> /dev/null; then
+        firewall_tool="ufw"
+        if ! ufw status | grep -q 'Status: active'; then
+            echo "UFW is installed but not active. Enabling..."
+            ufw --force enable
+            echo "✅ UFW enabled."
+        fi
+    else
+        echo "⚠️ No firewall tool (firewalld or ufw) found. Attempting to install one..."
+        if [[ "$os_id" == "rocky" || "$os_id" == "rhel" || "$os_id" == "fedora" ]]; then
+            echo "Installing firewalld for $PRETTY_NAME..."
+            dnf install -y firewalld
+            systemctl enable --now firewalld
+            firewall_tool="firewalld"
+            echo "✅ Firewalld installed and enabled."
+        elif [[ "$os_id" == "ubuntu" || "$os_id" == "debian" ]]; then
+            echo "Installing UFW for $PRETTY_NAME..."
+            apt-get update && apt-get install -y ufw
+            ufw --force enable
+            firewall_tool="ufw"
+            echo "✅ UFW installed and enabled."
+        else
+            echo "❌ Unsupported OS for automatic firewall installation. Please configure the firewall manually." >&2
+            firewall_tool="none"
+        fi
+    fi
+    # Return the determined firewall tool
+    echo "$firewall_tool"
+}
+
 # --- Main Functions ---
 
 # Function to change the system hostname
@@ -236,7 +280,6 @@ install_k3s() {
         if [ "$(swapon --show | wc -l)" -gt 0 ]; then
             echo "Swap is active. Disabling for Kubernetes compatibility..."
             swapoff -a
-            # Disable permanently in fstab
             sed -i.bak '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
             echo "✅ Swap disabled and /etc/fstab updated."
         else
@@ -244,16 +287,13 @@ install_k3s() {
         fi
         echo
 
-        # --- 2. Detect OS and Firewall ---
-        source /etc/os-release
-        local os_id=$ID
-        local firewall_tool="none"
-
-        if command -v firewall-cmd &> /dev/null && systemctl is-active --quiet firewalld; then
-            firewall_tool="firewalld"
-        elif command -v ufw &> /dev/null && ufw status | grep -q 'Status: active'; then
-            firewall_tool="ufw"
-        fi
+        # --- 2. Setup Firewall ---
+        echo "-------------------------------------------------"
+        echo "🔥 Setting up firewall..."
+        echo "-------------------------------------------------"
+        local firewall_tool
+        firewall_tool=$(setup_firewall)
+        echo
 
         # --- 3. Choose Server or Agent ---
         local k3s_type="server"
@@ -264,41 +304,58 @@ install_k3s() {
 
         # --- 4. Open Firewall Ports ---
         echo "-------------------------------------------------"
-        echo "🔥 Configuring firewall ($firewall_tool)..."
+        echo "Ports will be opened using '$firewall_tool'."
         echo "-------------------------------------------------"
         if [ "$firewall_tool" == "none" ]; then
-            echo "⚠️ No active firewall (firewalld or ufw) detected. Skipping port configuration."
-            echo "Please ensure the required ports are open manually if a firewall is enabled later."
+            echo "⚠️ Cannot configure firewall. Please ensure required ports are open manually."
         else
-            local ports_tcp
-            local ports_udp
+            local default_ports_tcp=()
+            local default_ports_udp=()
             if [ "$k3s_type" == "server" ]; then
-                echo "Opening ports for k3s server..."
-                ports_tcp="6443 2379 2380 10250" # k3s API, etcd, kubelet
-                ports_udp="8472 51820 4789" # Flannel (vxlan), Wireguard, Cilium
+                default_ports_tcp=(6443 2379 2380 10250) # k3s API, etcd, kubelet
+                default_ports_udp=(8472 51820 4789)     # Flannel (vxlan), Wireguard, Cilium
+                echo "Default TCP ports for k3s server: ${default_ports_tcp[*]}"
+                echo "Default UDP ports for k3s server: ${default_ports_udp[*]}"
             else
-                echo "Opening ports for k3s agent..."
-                ports_tcp="10250" # kubelet
-                ports_udp="8472 51820 4789" # Flannel (vxlan), Wireguard, Cilium
+                default_ports_tcp=(10250)               # kubelet
+                default_ports_udp=(8472 51820 4789)     # Flannel (vxlan), Wireguard, Cilium
+                echo "Default TCP ports for k3s agent: ${default_ports_tcp[*]}"
+                echo "Default UDP ports for k3s agent: ${default_ports_udp[*]}"
             fi
 
-            for port in $ports_tcp; do
-                if [ "$firewall_tool" == "firewalld" ]; then
-                    firewall-cmd --permanent --add-port=${port}/tcp > /dev/null
-                elif [ "$firewall_tool" == "ufw" ]; then
-                    ufw allow ${port}/tcp > /dev/null
+            read -p "Enter any additional TCP ports to open (space-separated), or press Enter to skip: " custom_tcp_ports
+            read -p "Enter any additional UDP ports to open (space-separated), or press Enter to skip: " custom_udp_ports
+
+            local all_tcp_ports=("${default_ports_tcp[@]}" $custom_tcp_ports)
+            local all_udp_ports=("${default_ports_udp[@]}" $custom_udp_ports)
+
+            echo "Opening TCP ports: ${all_tcp_ports[*]}"
+            for port in "${all_tcp_ports[@]}"; do
+                if [[ "$port" =~ ^[0-9]+$ ]]; then # Basic validation
+                    if [ "$firewall_tool" == "firewalld" ]; then
+                        firewall-cmd --permanent --add-port=${port}/tcp > /dev/null
+                    elif [ "$firewall_tool" == "ufw" ]; then
+                        ufw allow ${port}/tcp > /dev/null
+                    fi
                 fi
             done
-            for port in $ports_udp; do
-                if [ "$firewall_tool" == "firewalld" ]; then
-                    firewall-cmd --permanent --add-port=${port}/udp > /dev/null
-                elif [ "$firewall_tool" == "ufw" ]; then
-                    ufw allow ${port}/udp > /dev/null
+
+            echo "Opening UDP ports: ${all_udp_ports[*]}"
+            for port in "${all_udp_ports[@]}"; do
+                if [[ "$port" =~ ^[0-9]+$ ]]; then # Basic validation
+                    if [ "$firewall_tool" == "firewalld" ]; then
+                        firewall-cmd --permanent --add-port=${port}/udp > /dev/null
+                    elif [ "$firewall_tool" == "ufw" ]; then
+                        ufw allow ${port}/udp > /dev/null
+                    fi
                 fi
             done
 
             if [ "$firewall_tool" == "firewalld" ]; then
+                echo "Reloading firewalld..."
                 firewall-cmd --reload
+            elif [ "$firewall_tool" == "ufw" ]; then
+                echo "UFW rules will be applied on next reload (or are already active)."
             fi
             echo "✅ Firewall ports configured."
         fi
@@ -308,13 +365,13 @@ install_k3s() {
         echo "-------------------------------------------------"
         echo "🚀 Installing k3s as a $k3s_type..."
         echo "-------------------------------------------------"
+        source /etc/os-release
+        local os_id=$ID
         local install_cmd="curl -sfL https://get.k3s.io |"
         local install_opts=""
 
-        # Handle Rocky Linux specifics
         if [ "$os_id" == "rocky" ]; then
             echo "Rocky Linux detected. Applying specific configurations..."
-            # Use wireguard-native backend for flannel to work with nf_tables
             install_opts=" --flannel-backend=wireguard-native"
             echo "✅ Using 'wireguard-native' flannel backend for nf_tables compatibility."
         fi
