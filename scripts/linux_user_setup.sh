@@ -393,6 +393,7 @@ install_k3s() {
 
         if [ $? -eq 0 ]; then
             echo "✅ k3s $k3s_type installed successfully!"
+            echo "get the token: sudo cat /var/lib/rancher/k3s/server/node-token"
             if [ "$k3s_type" == "server" ]; then
                 echo "Kubeconfig is located at /etc/rancher/k3s/k3s.yaml"
                 echo "Run 'sudo k3s kubectl get nodes' to check status."

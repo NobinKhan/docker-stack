@@ -1,0 +1,84 @@
+you have to modify the hostname part and also add some new features.
+
+# Hostname
+Ubuntu 24.04 and Rocky Linux 9 server with public IP.  
+hostname should be enter the fully qualified domain name like "server-01.barrzen.com" and also resolve externally as "server-01.barrzen.com".  
+Give me clear step-by-step instructions to:  
+1. Update /etc/hosts for both IPv4 and IPv6 in Rocky-Linux/Ubuntu format so that the hostname works locally and externally.  
+2. Set the hostname properly so that `hostname` shows "server-01" and `hostname -f` shows "server-01.barrzen.com".  
+4. Make the setup fail-safe so that even if Cloudflare DNS is down, the hostname still resolves locally for Kubernetes and k3s.  
+
+# New features
+All features must work on Ubuntu 24.04 and Rocky Linux 9 server
+1. ask for k3s installation
+2. give option to choose between server and agent
+3. Fix the swap issue
+4. open firewall ports for k3s (beware that ubuntu and rocky have different application like ufw and firewall-cmd and they can be not installed 
+or even can be inactive. best is that find the active one and use it if only you think this is better otherwise use best approches.)
+5. install k3s
+6. There can be some specific consideration for Rocky Linux 9 like cgroup issue.
+
+UngR78odqTo61yeZzXX5fHKIUT4ykS
+
+
+# Install packages
+install open-iscsi nfs-common
+
+# steps to port forward k3s
+10250/tcp                  ALLOW       Anywhere
+8472/udp                   ALLOW       Anywhere
+51820/udp                  ALLOW       Anywhere
+4789/udp                   ALLOW       Anywhere
+22/tcp                     ALLOW       Anywhere
+6443/tcp                   ALLOW       Anywhere
+10250/tcp (v6)             ALLOW       Anywhere (v6)
+8472/udp (v6)              ALLOW       Anywhere (v6)
+51820/udp (v6)             ALLOW       Anywhere (v6)
+4789/udp (v6)              ALLOW       Anywhere (v6)
+22/tcp (v6)                ALLOW       Anywhere (v6)
+6443/tcp (v6)              ALLOW       Anywhere (v6)
+
+sudo firewall-cmd --list-ports
+sudo ss -tuln
+
+# Permanently open port 8080
+sudo firewall-cmd --permanent --add-port=8080/tcp
+
+# Apply changes immediately
+sudo firewall-cmd --reload
+
+curl -sfL https://get.k3s.io | sudo INSTALL_K3S_EXEC="
+  --kube-proxy-arg=proxy-mode=ipvs \ # Only suitable for large scales services or production
+  --cluster-init \
+  --disable=traefik \
+  --disable=metrics-server \
+  --disable=servicelb \
+  --flannel-backend=wireguard-native \
+  --write-kubeconfig-mode=644 \
+  --node-external-ip=173.249.13.129 \
+  --tls-san=173.249.13.129" sh -
+
+kubectl get nodes -o wide  # Should show the server node as Ready
+kubectl get pods --all-namespaces -o wide # Most pods should be Running
+
+# Export kubeconfig for easy access (add to ~/.bashrc for persistence):
+export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+
+Step 3: Obtain the Node Token
+sudo cat /var/lib/rancher/k3s/server/node-token
+
+Step 4: Install K3s Agent on the Worker Node
+curl -sfL https://get.k3s.io | sudo INSTALL_K3S_EXEC="--node-external-ip=103.7.4.76" \
+K3S_URL="https://173.249.13.129:6443" \
+K3S_TOKEN="K10d93b4d5e8418b2f3c0a7faa2113bf9b8dfc3984b23f804340af57ac26709dedf::server:ebe93d0008781f7e75b473059e629aab" sh -
+
+
+# test after metallb
+kubectl create deploy nginx --image=nginx
+kubectl expose deploy nginx --port=80 --target-port=80   --type=LoadBalancer --load-balancer-ip=103.7.4.76
+
+kubectl get pods -o wide
+kubectl get svc -o wide
+
+kubectl delete svc nginx
+kubectl delete deploy nginx
