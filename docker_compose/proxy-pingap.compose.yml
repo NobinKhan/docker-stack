@@ -1,0 +1,28 @@
+services:
+  pingap:
+    image: vicanso/pingap
+    container_name: pingap
+    restart: always
+    volumes:
+      - pingap-data:/opt/pingap
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      PINGAP_CONF: /opt/pingap/conf
+      PINGAP_ADMIN_ADDR: 0.0.0.0:80/pingap
+      PINGAP_ADMIN_USER: ${PINGAP_ADMIN_USER}
+      PINGAP_ADMIN_PASSWORD: ${PINGAP_ADMIN_PASSWORD}
+      PINGAP_AUTORELOAD: "true"
+    networks:
+      - proxy-network
+      - komodo-network
+
+networks:
+  proxy-network:
+    external: true
+  komodo-network:
+    external: true
+
+volumes:
+  pingap-data:
