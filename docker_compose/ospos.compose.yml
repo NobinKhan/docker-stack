@@ -1,0 +1,48 @@
+services:
+  mysql:
+    image: mariadb:10.5
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      # - ./tables.sql:/docker-entrypoint-initdb.d/database.sql
+      - mysql:/var/lib/mysql:rw
+    networks:
+      - ospos-network
+
+  ospos:
+    image: jekkos/opensourcepos:3.4.1
+    restart: unless-stopped
+    depends_on:
+      - mysql
+    environment:
+      CI_ENVIRONMENT: ${OSPOS_CI_ENV}
+      FORCE_HTTPS: ${OSPOS_FORCE_HTTPS}
+      PHP_TIMEZONE: UTC
+      MYSQL_USERNAME: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DB_NAME: ${MYSQL_DATABASE}
+      MYSQL_HOST_NAME: mysql
+    networks:
+      - ospos-network
+      - proxy-network
+    volumes:
+      - uploads:/app/writable/uploads
+      - logs:/app/writable/logs
+
+networks:
+  ospos-network:
+    external: true
+  proxy-network:
+    external: true
+
+volumes:
+  mysql:
+      driver: local
+  uploads:
+    driver: local
+  logs:
+    driver: local
