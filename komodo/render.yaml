@@ -3,8 +3,7 @@ databases:
     plan: free
 
 services:
-  # FerretDB service
-  - type: pserv # Private Service
+  - type: pserv
     name: ferretdb
     runtime: image
     image:
@@ -19,10 +18,9 @@ services:
       mountPath: /state
       sizeGB: 1
 
-  # Komodo Core service
   - type: web
     name: komodo-core
-    plan: free #
+    plan: free
     runtime: image
     image:
       url: ghcr.io/moghtech/komodo-core:latest
@@ -43,5 +41,4 @@ services:
           name: komododb
           property: password
 
-      # Adds all environment variables from an environment group
       - fromGroup: komodo
