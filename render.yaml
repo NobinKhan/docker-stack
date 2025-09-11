@@ -2,31 +2,25 @@ services:
   - type: web
     plan: free
     runtime: image
-    name: n8n-service
+    name: komodo-core
     image:
-      url: docker.io/n8nio/n8n:latest
+      url: ghcr.io/moghtech/komodo-core:latest
     envVars:
-      - key: N8N_ENCRYPTION_KEY
-        generateValue: true
-      - key: DB_TYPE
-        value: postgresdb
-      - key: DB_POSTGRESDB_DATABASE
+      - fromGroup: komodo
+      # - key: KOMODO_DATABASE_ADDRESS
+      #   fromService:
+      #     name: ferretdb
+      #     type: pserv
+      #     property: hostport
+      - key: KOMODO_DATABASE_USERNAME
         fromDatabase:
-          name: n8n-db
-          property: database
-      - key: DB_POSTGRESDB_HOST
-        fromDatabase:
-          name: n8n-db
-          property: host
-      - key: DB_POSTGRESDB_PASSWORD
-        fromDatabase:
-          name: n8n-db
-          property: password
-      - key: DB_POSTGRESDB_USER
-        fromDatabase:
-          name: n8n-db
+          name: komododb
           property: user
+      - key: KOMODO_DATABASE_PASSWORD
+        fromDatabase:
+          name: komododb
+          property: password
 
 databases:
-  - name: n8n-db
+  - name: komododb
     plan: free
