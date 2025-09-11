@@ -1,3 +1,7 @@
+databases:
+  - name: komododb
+    plan: free
+
 services:
   # FerretDB service
   - type: pserv # Private Service
@@ -8,7 +12,7 @@ services:
     envVars:
       - key: FERRETDB_POSTGRESQL_URL
         fromDatabase:
-          name: Postgresql-Database
+          name: komododb
           property: connectionString
     disk:
       name: ferretdbstate
@@ -31,12 +35,12 @@ services:
 
       - key: KOMODO_DATABASE_USERNAME
         fromDatabase:
-          name: Postgresql-Database
+          name: komododb
           property: user
 
       - key: KOMODO_DATABASE_PASSWORD
         fromDatabase:
-          name: Postgresql-Database
+          name: komododb
           property: password
 
       # Adds all environment variables from an environment group
