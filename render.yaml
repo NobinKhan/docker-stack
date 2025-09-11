@@ -48,8 +48,3 @@ services:
 
       # Adds all environment variables from an environment group
       - fromGroup: komodo
-
-    disk:
-      name: komodobackups
-      mountPath: /backups
-      sizeGB: 1
