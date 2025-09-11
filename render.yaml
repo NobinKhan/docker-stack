@@ -6,7 +6,7 @@ services:
     image:
       url: ghcr.io/moghtech/komodo-core:latest
     envVars:
-      - fromGroup: komodo
+      - fromGroup: Komodo
       # - key: KOMODO_DATABASE_ADDRESS
       #   fromService:
       #     name: ferretdb
