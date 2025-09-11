@@ -6,7 +6,7 @@ services:
   # FerretDB service
   - type: pserv # Private Service
     name: ferretdb
-    runtime: docker
+    runtime: image
     image:
       url: ghcr.io/ferretdb/ferretdb:2.5.0
     envVars:
@@ -22,13 +22,10 @@ services:
   # Komodo Core service
   - type: web
     name: komodo-core
-    region: frankfurt # Default: oregon
     plan: free #
-    runtime: docker
+    runtime: image
     image:
       url: ghcr.io/moghtech/komodo-core:latest
-    domains: # Custom domains
-      - server.barrzen.com
     envVars:
       - key: KOMODO_DATABASE_ADDRESS
         fromService:
