@@ -15,7 +15,7 @@ services:
           name: Postgresql-Database
           property: connectionString
     disk:
-      - name: ferretdb-state
+      - name: ferretdbstate
         mountPath: /state
         sizeGB: 1
 
@@ -50,6 +50,6 @@ services:
       - fromGroup: komodo
 
     disk:
-      - name: komodo-backups
+      - name: komodobackups
         mountPath: /backups
         sizeGB: 1
