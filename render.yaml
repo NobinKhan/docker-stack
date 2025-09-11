@@ -22,6 +22,7 @@ services:
           property: password
 
   - type: pserv
+    plan: free
     runtime: image
     name: ferretdb
     image:
