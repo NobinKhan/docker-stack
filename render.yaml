@@ -7,11 +7,11 @@ services:
       url: ghcr.io/moghtech/komodo-core:latest
     envVars:
       - fromGroup: Komodo
-      # - key: KOMODO_DATABASE_ADDRESS
-      #   fromService:
-      #     name: ferretdb
-      #     type: pserv
-      #     property: hostport
+      - key: KOMODO_DATABASE_ADDRESS
+        fromService:
+          name: ferretdb
+          type: pserv
+          property: hostport
       - key: KOMODO_DATABASE_USERNAME
         fromDatabase:
           name: komododb
@@ -20,6 +20,21 @@ services:
         fromDatabase:
           name: komododb
           property: password
+
+  - type: pserv
+    runtime: image
+    name: ferretdb
+    image:
+      url: ghcr.io/ferretdb/ferretdb:2.5.0
+    envVars:
+      - key: FERRETDB_POSTGRESQL_URL
+        fromDatabase:
+          name: komododb
+          property: connectionString
+    disk:
+      name: ferretdbstate
+      mountPath: /state
+      sizeGB: 1
 
 databases:
   - name: komododb
