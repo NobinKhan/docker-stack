@@ -14,6 +14,10 @@ services:
         fromDatabase:
           name: Postgresql-Database
           property: connectionString
+    disk:
+      - name: ferretdb-state
+        mountPath: /state
+        sizeGB: 1
 
   # Komodo Core service
   - type: web
@@ -44,3 +48,8 @@ services:
 
       # Adds all environment variables from an environment group
       - fromGroup: komodo
+
+    disk:
+      - name: komodo-backups
+        mountPath: /backups
+        sizeGB: 1
