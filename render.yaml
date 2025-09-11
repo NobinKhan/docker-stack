@@ -1,7 +1,3 @@
-databases:
-  - name: Postgresql-Database
-    plan: free
-
 services:
   # FerretDB service
   - type: pserv # Private Service
