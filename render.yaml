@@ -1,44 +1,32 @@
-databases:
-  - name: komododb
-    plan: free
-
 services:
-  - type: pserv
-    name: ferretdb
-    runtime: image
-    image:
-      url: ghcr.io/ferretdb/ferretdb:2.5.0
-    envVars:
-      - key: FERRETDB_POSTGRESQL_URL
-        fromDatabase:
-          name: komododb
-          property: connectionString
-    disk:
-      name: ferretdbstate
-      mountPath: /state
-      sizeGB: 1
-
   - type: web
-    name: komodo-core
     plan: free
     runtime: image
+    name: n8n-service
     image:
-      url: ghcr.io/moghtech/komodo-core:latest
+      url: docker.io/n8nio/n8n:latest
     envVars:
-      - key: KOMODO_DATABASE_ADDRESS
-        fromService:
-          name: ferretdb
-          type: pserv
-          property: hostport
-
-      - key: KOMODO_DATABASE_USERNAME
+      - key: N8N_ENCRYPTION_KEY
+        generateValue: true
+      - key: DB_TYPE
+        value: postgresdb
+      - key: DB_POSTGRESDB_DATABASE
         fromDatabase:
-          name: komododb
+          name: n8n-db
+          property: database
+      - key: DB_POSTGRESDB_HOST
+        fromDatabase:
+          name: n8n-db
+          property: host
+      - key: DB_POSTGRESDB_PASSWORD
+        fromDatabase:
+          name: n8n-db
+          property: password
+      - key: DB_POSTGRESDB_USER
+        fromDatabase:
+          name: n8n-db
           property: user
 
-      - key: KOMODO_DATABASE_PASSWORD
-        fromDatabase:
-          name: komododb
-          property: password
-
-      - fromGroup: komodo
+databases:
+  - name: n8n-db
+    plan: free

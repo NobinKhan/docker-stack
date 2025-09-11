@@ -1,0 +1,44 @@
+databases:
+  - name: komododb
+    plan: free
+
+services:
+  - type: pserv
+    name: ferretdb
+    runtime: image
+    image:
+      url: ghcr.io/ferretdb/ferretdb:2.5.0
+    envVars:
+      - key: FERRETDB_POSTGRESQL_URL
+        fromDatabase:
+          name: komododb
+          property: connectionString
+    disk:
+      name: ferretdbstate
+      mountPath: /state
+      sizeGB: 1
+
+  - type: web
+    name: komodo-core
+    plan: free
+    runtime: image
+    image:
+      url: ghcr.io/moghtech/komodo-core:latest
+    envVars:
+      - key: KOMODO_DATABASE_ADDRESS
+        fromService:
+          name: ferretdb
+          type: pserv
+          property: hostport
+
+      - key: KOMODO_DATABASE_USERNAME
+        fromDatabase:
+          name: komododb
+          property: user
+
+      - key: KOMODO_DATABASE_PASSWORD
+        fromDatabase:
+          name: komododb
+          property: password
+
+      - fromGroup: komodo
