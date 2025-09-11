@@ -1,0 +1,55 @@
+databases:
+  - name: Postgresql-Database
+    plan: free
+
+services:
+  # FerretDB service
+  - type: pserv # Private Service
+    name: ferretdb
+    env: docker
+    image:
+      url: ghcr.io/ferretdb/ferretdb:2.5.0
+    envVars:
+      - key: FERRETDB_POSTGRESQL_URL
+        fromDatabase:
+          name: Postgresql-Database
+          property: connectionString
+    disks:
+      - name: ferretdb-state
+        mountPath: /state
+        sizeGB: 1
+
+  # Komodo Core service
+  - type: web
+    name: komodo-core
+    region: frankfurt # Default: oregon
+    plan: free #
+    env: docker
+    image:
+      url: ghcr.io/moghtech/komodo-core:latest
+    domains: # Custom domains
+      - server.barrzen.com
+    envVars:
+      - key: KOMODO_DATABASE_ADDRESS
+        fromService:
+          name: ferretdb
+          type: pserv
+          property: hostport
+
+      - key: KOMODO_DATABASE_USERNAME
+        fromDatabase:
+          name: Postgresql-Database
+          property: user
+
+      - key: KOMODO_DATABASE_PASSWORD
+        fromDatabase:
+          name: Postgresql-Database
+          property: password
+
+      # Adds all environment variables from an environment group
+      - fromGroup: komodo
+
+    disks:
+      - name: komodo-backups
+        mountPath: /backups
+        sizeGB: 1
