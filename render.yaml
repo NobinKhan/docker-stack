@@ -32,10 +32,6 @@ services:
         fromDatabase:
           name: komododb
           property: connectionString
-    disk:
-      name: ferretdbstate
-      mountPath: /state
-      sizeGB: 1
 
 databases:
   - name: komododb
