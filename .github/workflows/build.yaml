@@ -107,7 +107,7 @@ jobs:
             docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.inputs.image }}:${{ github.event.inputs.version }}
 
           elif [ "${{ github.event.inputs.image }}" = "dpanel" ]; then
-            docker build --platform linux/amd64 -t ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ github.event.inputs.image }}:latest -f Dockerfile.dpanel --push ./dockerfiles
+            docker build --build-arg BASE_IMAGE=${{ env.DPANEL_UPSTREAM_IMAGE }} --platform linux/amd64 -t ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ github.event.inputs.image }}:latest -f Dockerfile.dpanel --push ./dockerfiles
           else
             echo "nothing to work with"
           fi
