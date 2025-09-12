@@ -1,0 +1,11 @@
+ARG BASE_IMAGE=dpanel/dpanel:1.8.1.2-lite
+FROM ${BASE_IMAGE}
+
+COPY dpanel_render.sh /app/server/ping-loop.sh
+
+RUN apk update && apk upgrade && \
+    apk add --no-cache curl && \
+    rm -rf /var/cache/apk/* && \
+    chmod +x /app/server/ping-loop.sh
+
+ENTRYPOINT [ "sh", "-c", "/app/server/dpanel server:start -f /app/server/config.yaml & /app/server/ping-loop.sh" ]
