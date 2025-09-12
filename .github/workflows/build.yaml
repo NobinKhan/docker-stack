@@ -11,6 +11,7 @@ on:
         options:
           - "postgres"
           - "redis"
+          - "dpanel"
           - "saleor"
           - "saleor-dashboard"
       version:
@@ -25,6 +26,7 @@ env:
   POSTGRES_UPSTREAM_IMAGE: cgr.dev/chainguard/postgres:latest
   SALEOR_UPSTREAM_IMAGE: ghcr.io/saleor/saleor
   SALEOR_DASHBOARD_UPSTREAM_IMAGE: ghcr.io/saleor/saleor-dashboard
+  DPANEL_UPSTREAM_IMAGE: docker.io/dpanel/dpanel:lite
 
 jobs:
   Build:
@@ -94,7 +96,7 @@ jobs:
 
             docker push ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ github.event.inputs.image }}:${{ github.event.inputs.version }}
             docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.inputs.image }}:${{ github.event.inputs.version }}
-          
+
           elif [ "${{ github.event.inputs.image }}" = "saleor-dashboard" ]; then
             docker pull ${{ env.SALEOR_DASHBOARD_UPSTREAM_IMAGE }}
 
@@ -103,7 +105,9 @@ jobs:
 
             docker push ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ github.event.inputs.image }}:${{ github.event.inputs.version }}
             docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.inputs.image }}:${{ github.event.inputs.version }}
-          
+
+          elif [ "${{ github.event.inputs.image }}" = "dpanel" ]; then
+            docker build --platform linux/amd64 -t ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ github.event.inputs.image }}:latest -f Dockerfile.dpanel --push ./dockerfiles
           else
             echo "nothing to work with"
           fi

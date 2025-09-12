@@ -1,27 +1,22 @@
 services:
   dpanel:
-    build:
-      context: ../dockerfiles
-      dockerfile: Dockerfile.dpanel
-      args:
-        - BASE_IMAGE=dpanel/dpanel:1.8.1.2-lite
+    image: dpanel/dpanel:lite
     container_name: dpanel
     restart: always
     ports:
       - 8807:8080
     environment:
       APP_NAME: dpanel
-      PING_URL: https://dpanel-kt2p.onrender.com
-#     volumes:
-#       - /var/run/docker.sock:/var/run/docker.sock
-#       - ./container-volume/dpanel:/dpanel
-#     networks:
-#       - dpanel-networks
-#       - proxy-networks
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./container-volume/dpanel:/dpanel
+    networks:
+      - dpanel-networks
+      - proxy-networks
 
-# networks:
-#   dpanel-networks:
-#     external: true
+networks:
+  dpanel-networks:
+    external: true
 
-#   proxy-networks:
-#     external: true
+  proxy-networks:
+    external: true
