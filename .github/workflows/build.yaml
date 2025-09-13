@@ -24,7 +24,7 @@ env:
   GITHUB_IMAGE_REGISTRY: ghcr.io
   GITHUB_IMAGE_NAME: nobinkhan/docker-stack
   POSTGRES_UPSTREAM_IMAGE: cgr.dev/chainguard/postgres:latest
-  SALEOR_UPSTREAM_IMAGE: ghcr.io/saleor/saleor
+  SALEOR_UPSTREAM_IMAGE: ghcr.io/saleor/saleor:latest
   SALEOR_DASHBOARD_UPSTREAM_IMAGE: ghcr.io/saleor/saleor-dashboard
   DPANEL_UPSTREAM_IMAGE: docker.io/dpanel/dpanel:lite
 
@@ -89,13 +89,7 @@ jobs:
             docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.extract-version.outputs.image_short_name }}:latest
 
           elif [ "${{ github.event.inputs.image }}" = "saleor" ]; then
-            docker pull ${{ env.SALEOR_UPSTREAM_IMAGE }}
-
-            docker tag ${{ env.SALEOR_UPSTREAM_IMAGE }} ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ github.event.inputs.image }}:${{ github.event.inputs.version }}
-            docker tag ${{ env.SALEOR_UPSTREAM_IMAGE }} ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.inputs.image }}:${{ github.event.inputs.version }}
-
-            docker push ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ github.event.inputs.image }}:${{ github.event.inputs.version }}
-            docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.inputs.image }}:${{ github.event.inputs.version }}
+            docker build --build-arg BASE_IMAGE=${{ env.SALEOR_UPSTREAM_IMAGE }} --platform linux/amd64 -t ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ github.event.inputs.image }}:latest -t ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.inputs.image }}:latest -f dockerfiles/Dockerfile.saleor-core --push ./dockerfiles
 
           elif [ "${{ github.event.inputs.image }}" = "saleor-dashboard" ]; then
             docker pull ${{ env.SALEOR_DASHBOARD_UPSTREAM_IMAGE }}
@@ -111,3 +105,12 @@ jobs:
           else
             echo "nothing to work with"
           fi
+
+      - name: Render Deploy Trigger With WebHook
+        run: |
+          if [ "${{ github.event.inputs.image }}" = "dpanel" ]; then
+            curl "${{ secrets.DEPLOY_WEBHOOK_URL_DPANEL }}"
+          elif [ "${{ github.event.inputs.image }}" = "saleor" ]; then
+            curl "${{ secrets.SALEOR_BETA_API_DEPLOY_HOOK_RENDER }}"
+          fi
+
