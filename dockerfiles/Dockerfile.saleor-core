@@ -1,14 +1,16 @@
 ARG BASE_IMAGE=ghcr.io/saleor/saleor:latest
 FROM ${BASE_IMAGE}
 
-COPY dpanel_render.sh /app/ping-loop.sh
-COPY mini_server.py /app/mini_server.py
+COPY mini_server.py ping-loop.sh start_api.sh start_worker.sh start_scheduler.sh /app/
 
-RUN apt-get update \
+RUN apt-get update && apt-get upgrade -y \
   && apt-get install -y \
   curl \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* \
-  && chmod +x /app/ping-loop.sh
+  && chmod +x /app/ping-loop.sh \
+  && chmod +x /app/start_api.sh \
+  && chmod +x /app/start_worker.sh \
+  && chmod +x /app/start_scheduler.sh
 
-CMD [ "sh", "-c", "uvicorn saleor.asgi:application --host=0.0.0.0 --port=8000 --workers=2 --lifespan=off --ws=none --no-server-header --no-access-log --timeout-keep-alive=35 --timeout-graceful-shutdown=30 --limit-max-requests=10000 & /app/ping-loop.sh" ]
+CMD [ "/app/start_api.sh" ]
