@@ -1,0 +1,19 @@
+services:
+  mathesar:
+    image: mathesar/mathesar:latest
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.production
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
+      DEBUG: ${DEBUG}
+      SECRET_KEY: ${SECRET_KEY}
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY}
+      DOMAIN_NAME: ${DOMAIN_NAME}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+    volumes:
+      - /container_data/swarm/volume/msar/static:/code/static
+      - /container_data/swarm/volume/msar/media:/code/media
+      - /container_data/swarm/volume/msar/secrets:/code/.secrets
