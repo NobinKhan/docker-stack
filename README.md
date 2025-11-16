@@ -81,3 +81,8 @@ podman run -it \
   --volume /run/media/nobin/Files/project:/home/nonroot/project \
   ubuntu:24.04
 ```
+
+### Initial Server Setup - No Input
+```bash
+curl -fsSL https://raw.githubusercontent.com/NobinKhan/docker-stack/main/server/initial_setup_noinput.sh | bash -s nazrul
+
