@@ -1,8 +1,6 @@
 services:
   agent:
     image: portainer/agent:lts
-    environment:
-      AGENT_CLUSTER_ADDR: tasks.agent
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /var/lib/docker/volumes:/var/lib/docker/volumes
@@ -12,28 +10,25 @@ services:
       mode: global
       placement:
         constraints: [node.platform.os == linux]
-      labels:
-        proxy.exclude: "true"
 
   portainer:
     image: portainer/portainer-ce:lts
     command: -H tcp://tasks.agent:9001 --tlsskipverify
+    ports:
+      - "9443:9443"
     volumes:
-      - ./data/portainer:/data
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /container-data/swarm/services/portainer/data:/data
     networks:
       - portainer-network
-      - proxy-network
+      - proxy-traffic-network
     deploy:
       mode: replicated
       replicas: 1
       placement:
         constraints: [node.role == manager]
-    ports: # Remove After Domain Setup
-      - "9443:9443"
 
 networks:
-  proxy-network:
-    external: true
   portainer-network:
+    external: true
+  proxy-traffic-network:
     external: true
