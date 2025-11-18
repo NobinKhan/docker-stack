@@ -1,40 +1,27 @@
 services:
   postgres:
-    image: nobinkhan/postgres:17.5-wolfi
-    deploy:
-      replicas: 1
-      restart_policy:
-        condition: on-failure
+    image: nobinkhan/postgres:18.1-wolfi
+    volumes:
+      - /container-data/swarm/database/postgres/nginx-proxy-manager/data:/var/lib/postgresql/data
+    networks:
+      - postgresql-network
+      - nginx-proxy-db
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - ./data/postgresql:/var/lib/postgresql/data
-    networks:
-      - postgresql-network
-      - proxy-network
-
-  pgadmin:
-    image: dpage/pgadmin4:latest
     deploy:
       replicas: 1
       restart_policy:
         condition: on-failure
-    environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
-    networks:
-      - postgresql-network
-      - proxy-network
-      - nginx-proxy-db
-    volumes:
-      - ./data/pgadmin:/var/lib/pgadmin
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 networks:
-  nginx-proxy-db:
-    external: true
-  proxy-network:
-    external: true
   postgresql-network:
+    external: true
+  nginx-proxy-db:
     external: true

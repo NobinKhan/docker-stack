@@ -1,0 +1,33 @@
+services:
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    volumes:
+      - /container-data/swarm/services/pgadmin/data:/var/lib/pgadmin
+    networks:
+      - postgresql-network
+      - proxy-traffic-network
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+      PGADMIN_CONFIG_SECURITY_EMAIL_SENDER: ${PGADMIN_CONFIG_SECURITY_EMAIL_SENDER}
+      PGADMIN_CONFIG_MAIL_SERVER: ${PGADMIN_CONFIG_MAIL_SERVER}
+      PGADMIN_CONFIG_MAIL_PORT: ${PGADMIN_CONFIG_MAIL_PORT}
+      PGADMIN_CONFIG_MAIL_USE_TLS: ${PGADMIN_CONFIG_MAIL_USE_TLS}
+      PGADMIN_CONFIG_MAIL_USERNAME: ${PGADMIN_CONFIG_MAIL_USERNAME}
+      PGADMIN_CONFIG_MAIL_PASSWORD: ${PGADMIN_CONFIG_MAIL_PASSWORD}
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f pgadmin4 >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+networks:
+  postgresql-network:
+    external: true
+  proxy-traffic-network:
+    external: true

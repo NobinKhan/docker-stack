@@ -1,19 +1,4 @@
 services:
-  postgresql:
-    image: postgres:17.0-alpine3.20
-    container_name: postgresql
-    ports:
-      - 5432:5432
-    restart: always
-    volumes:
-      - ./data/postgresql:/var/lib/postgresql/data
-    environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-    networks:
-      - dev-server
-
   pgadmin:
     image: dpage/pgadmin4
     container_name: pgadmin
@@ -23,114 +8,11 @@ services:
     volumes:
       - ./data/pgadmin:/var/lib/pgadmin
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
-    networks:
-      - dev_server
-
-
-  valkey:
-    image: chainguard/valkey:latest
-    container_name: valkey
-    ports:
-      - 6379:6379
-    restart: always
-    networks:
-      - dev_server
-
-
-  meilisearch:
-    image: getmeili/meilisearch:v1.10.3
-    container_name: meilisearch
-    ports:
-      - 7700:7700
-    restart: always
-    volumes:
-      - ./data/meilisearch:/data.ms
-    environment:
-      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
-    networks:
-      - dev_server
-
-
-  caredrop:
-    image: ghcr.io/careboxdevteam/caredrop_backend:latest
-    container_name: caredrop
-    ports:
-      - 8080:8000
-    restart: always
-    networks:
-      - dev_server
-
-
-  carebox-backend:
-    image: ghcr.io/careboxdevteam/carebox-backend-cicd:latest
-    container_name: carebox-backend
-    ports:
-      - 8082:8000
-    restart: always
-    networks:
-      - dev_server
-      - nginx-proxy
-
-  carebox-product-micro:
-    image: ghcr.io/careboxdevteam/care-box-product-service/development:latest
-    container_name: carebox-product-micro
-    ports:
-      - 8083:8000
-    restart: always
-    networks:
-      - dev_server
-      - nginx-proxy
-
-  cloudflare_tunnel:
-    image: cloudflare/cloudflared
-    restart: unless-stopped
-    command: tunnel run
-    environment:
-      TUNNEL_TOKEN: ${CLOUDFLARE_TOKEN}
-    networks:
-      - npm
-
-  nginx-proxy-manager:
-    image: 'jc21/nginx-proxy-manager:v3'
-    container_name: nginx-proxy
-    restart: unless-stopped
-    environment:
-      # Mysql/Maria connection parameters:
-      DB_MYSQL_HOST: ${MYSQL_HOST}
-      DB_MYSQL_PORT: ${MYSQL_PORT}
-      DB_MYSQL_USER: ${MYSQL_USER}
-      DB_MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      DB_MYSQL_NAME: ${MYSQL_DATABASE}
-    volumes:
-      - ./data:/data
-      - ./letsencrypt:/etc/letsencrypt
-    depends_on:
-      - nginx-proxy-db
-    networks:
-      - nginx-proxy
-      - dev_server
-
-
-  nginx-proxy-db:
-    image: 'jc21/mariadb-aria:latest'
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      MARIADB_AUTO_UPGRADE: '1'
-    volumes:
-      - ./mysql:/var/lib/mysql
-    networks:
-      - nginx-proxy
-
-
-networks:
-  nginx-proxy:
-    external: true
-  dev_server:
-    external: true
-
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin@example.com
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f pgadmin4 >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s

@@ -5,3 +5,4 @@ gns.*
 # Added by cargo
 
 /target
+data
