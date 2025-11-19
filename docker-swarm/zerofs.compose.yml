@@ -1,0 +1,17 @@
+services:
+  zerofs9p:
+    image: ghcr.io/barre/zerofs:0.16.11
+    command: ["run", "--config", "/etc/zerofs/zerofs.toml"]
+    volumes:
+      - /var/cache/zerofs:/var/cache/zerofs
+      - /etc/zerofs:/etc/zerofs
+    networks:
+      - zerofs-network
+    deploy:
+      mode: global
+      placement:
+        constraints: [node.platform.os == linux]
+
+networks:
+  zerofs-network:
+    driver: overlay

@@ -6,3 +6,4 @@ gns.*
 
 /target
 data
+zerofs/.env

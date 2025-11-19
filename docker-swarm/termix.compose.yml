@@ -1,0 +1,17 @@
+services:
+  app:
+    image: ghcr.io/lukegus/termix:latest
+    volumes:
+      - /container-data/swarm/services/termix/data:/app/data
+    environment:
+      PORT: "8080"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    networks:
+      - proxy-traffic-network
+
+networks:
+  proxy-traffic-network:
+    external: true

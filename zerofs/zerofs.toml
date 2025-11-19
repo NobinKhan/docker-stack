@@ -1,0 +1,20 @@
+[cache]
+dir = "var/cache/zerofs"
+disk_size_gb = 10.0
+memory_size_gb = 1.0
+
+[storage]
+url = "s3://${AWS_S3_BUCKET}/zerofs-data"
+encryption_password = "${ZEROFS_PASSWORD}"
+
+
+[servers.ninep]
+addresses = ["0.0.0.0:5564"]
+unix_socket = "/var/run/zerofs/zerofs9p.sock"
+
+
+[aws]
+access_key_id = "${AWS_ACCESS_KEY_ID}"
+secret_access_key = "${AWS_SECRET_ACCESS_KEY}"
+endpoint = "${AWS_S3_ENDPOINT}"
+default_region = "$AWS_S3_REGION"
