@@ -1,0 +1,80 @@
+networks:
+  seaweed-network:
+    external: true
+
+services:
+  # --- Masters (3 nodes for HA) ---
+  master1:
+    image: chrislusf/seaweedfs
+    networks:
+      - seaweed-network
+    command: "master -ip=master1 -port=9333 -peers=master1:9333,master2:9333,master3:9333 -mdir=/data -defaultReplication=001"
+    volumes:
+      - master1_data:/data
+    deploy:
+      endpoint_mode: dnsrr
+      placement:
+        constraints:
+          - node.labels.seaweed-role == master1
+
+  master2:
+    image: chrislusf/seaweedfs
+    networks:
+      - seaweed-network
+    command: "master -ip=master2 -port=9333 -peers=master1:9333,master2:9333,master3:9333 -mdir=/data -defaultReplication=001"
+    volumes:
+      - master2_data:/data
+    deploy:
+      endpoint_mode: dnsrr
+      placement:
+        constraints:
+          - node.labels.seaweed-role == master2
+
+  master3:
+    image: chrislusf/seaweedfs
+    networks:
+      - seaweed-network
+    command: "master -ip=master3 -port=9333 -peers=master1:9333,master2:9333,master3:9333 -mdir=/data -defaultReplication=001"
+    volumes:
+      - master3_data:/data
+    deploy:
+      endpoint_mode: dnsrr
+      placement:
+        constraints:
+          - node.labels.seaweed-role == master3
+
+  # --- Volume Servers (1 per node) ---
+  volume:
+    image: chrislusf/seaweedfs
+    networks:
+      - seaweed-network
+    # We use tasks.masterX to find the masters via DNS Round Robin
+    command: 'volume -mserver="master1:9333,master2:9333,master3:9333" -port=8080 -dir=/data -max=0'
+    volumes:
+      - volume_data:/data
+    deploy:
+      mode: global  # Runs exactly one instance on EVERY node
+
+  # --- Filer (The Directory Manager) ---
+  filer:
+    image: chrislusf/seaweedfs
+    networks:
+      - seaweed-network
+    configs:
+      - source: filer_config
+        target: /etc/seaweedfs/filer.toml
+    command: 'filer -master="master1:9333,master2:9333,master3:9333" -port=8888'
+    ports:
+      - "8888:8888" # Expose Filer port to host so we can mount it
+    deploy:
+      replicas: 3
+
+volumes:
+  master1_data:
+  master2_data:
+  master3_data:
+  volume_data:
+
+configs:
+  filer_config:
+    file: /container-data/swarm/services/seaweedfs/compose/filer.toml

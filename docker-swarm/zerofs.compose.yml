@@ -1,17 +1,15 @@
 services:
   zerofs9p:
-    image: ghcr.io/barre/zerofs:0.16.11
+    image: ghcr.io/barre/zerofs:0.17.3
     command: ["run", "--config", "/etc/zerofs/zerofs.toml"]
+    ports:
+      - 5564:5564
     volumes:
       - /var/cache/zerofs:/var/cache/zerofs
       - /etc/zerofs:/etc/zerofs
-    networks:
-      - zerofs-network
+      - /tmp:/tmp
     deploy:
-      mode: global
+      mode: replicated
+      replicas: 1
       placement:
-        constraints: [node.platform.os == linux]
-
-networks:
-  zerofs-network:
-    driver: overlay
+        constraints: [node.labels.swarm == leader]
