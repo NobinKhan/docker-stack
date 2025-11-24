@@ -41,12 +41,12 @@ chmod 440 /etc/sudoers.d/$USERNAME
 echo ">>> User setup completed."
 echo ">>> Installing Docker..."
 
-# Install Docker
-curl -fsSL https://get.docker.com | sh
+# # Install Docker
+# curl -fsSL https://get.docker.com | sh
 
-# Add user to docker group
-usermod -aG docker "$USERNAME"
+# # Add user to docker group
+# usermod -aG docker "$USERNAME"
 
-echo ">>> Docker installed."
+# echo ">>> Docker installed."
 echo ">>> User '$USERNAME' added to docker group."
 echo ">>> Setup complete!"
