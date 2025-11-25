@@ -1,0 +1,14 @@
+[Unit]
+Description=Check remote Zerofs; mount remote 9P or fallback to local Zerofs
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=idle
+ExecStart=/usr/local/bin/zerofs-mount.sh
+TimeoutStartSec=0
+TimeoutStopSec=0
+KillMode=none
+
+[Install]
+WantedBy=multi-user.target

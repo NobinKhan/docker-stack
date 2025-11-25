@@ -1,0 +1,1 @@
+168.119.100.234  /container-data/zerofs-volume  9p  trans=tcp,port=5564,version=9p2000.L,_netdev,nofail,x-systemd.automount,x-systemd.device-timeout=10s,x-systemd.idle-timeout=10  0  0
