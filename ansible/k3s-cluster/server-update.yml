@@ -1,0 +1,24 @@
+---
+- name: Apply updates and reboot if necessary
+  hosts: k3s_servers             # Your group name from hosts.ini
+  become: yes                # Use 'sudo' for privilege escalation
+  gather_facts: no           # Skip fact gathering to save time initially
+
+  tasks:
+    - name: 1. Update package cache and upgrade all packages
+      ansible.builtin.apt:
+        update_cache: yes
+        upgrade: full
+        autoremove: yes
+      register: apt_status    # Save the output of this task
+
+    - name: 2. Check if a reboot is required (for Ubuntu/Debian)
+      ansible.builtin.stat:
+        path: /var/run/reboot-required
+      register: reboot_required_file
+
+    - name: 3. Reboot the server if the flag file exists
+      ansible.builtin.reboot:
+        msg: "Reboot initiated by Ansible after system updates"
+        connect_timeout: 300 # Max time to wait for SSH to reconnect
+      when: reboot_required_file.stat.exists
