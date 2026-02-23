@@ -10,10 +10,16 @@ on:
         type: choice
         options:
           - "postgres"
+          - "postgres-cnpg"
           - "redis"
           - "dpanel"
           - "saleor"
           - "saleor-dashboard"
+      postgres_major:
+        description: "Postgres major version for postgres-cnpg build"
+        required: true
+        default: "17"
+        type: string
       version:
         description: "Select Docker Image Version"
         required: true
@@ -68,6 +74,15 @@ jobs:
             version=$(docker run --rm --user postgres --entrypoint postgres ${{ env.POSTGRES_UPSTREAM_IMAGE }} --version | awk '{print $NF}')
             echo "version=$version" >> $GITHUB_OUTPUT
             echo "image_short_name=postgres" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event.inputs.image }}" = "postgres-cnpg" ]; then
+            docker build \
+              --build-arg PG_MAJOR=${{ github.event.inputs.postgres_major }} \
+              --platform linux/amd64 \
+              -t local/postgres-cnpg:build \
+              -f dockerfiles/Dockerfile.postgresql.cnpg .
+            version=$(docker run --rm --entrypoint postgres local/postgres-cnpg:build --version | awk '{print $NF}')
+            echo "version=$version" >> $GITHUB_OUTPUT
+            echo "image_short_name=postgres-cnpg" >> $GITHUB_OUTPUT
           else
             echo "nothing to work with"
           fi
@@ -86,6 +101,17 @@ jobs:
             docker push ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.extract-version.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}-wolfi
             docker push ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.extract-version.outputs.image_short_name }}:latest
             docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.extract-version.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}-wolfi
+            docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.extract-version.outputs.image_short_name }}:latest
+
+          elif [ "${{ github.event.inputs.image }}" = "postgres-cnpg" ]; then
+            docker tag local/postgres-cnpg:build ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.extract-version.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}-chainguard-cnpg
+            docker tag local/postgres-cnpg:build ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.extract-version.outputs.image_short_name }}:latest
+            docker tag local/postgres-cnpg:build ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.extract-version.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}-chainguard-cnpg
+            docker tag local/postgres-cnpg:build ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.extract-version.outputs.image_short_name }}:latest
+
+            docker push ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.extract-version.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}-chainguard-cnpg
+            docker push ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.extract-version.outputs.image_short_name }}:latest
+            docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.extract-version.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}-chainguard-cnpg
             docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.extract-version.outputs.image_short_name }}:latest
 
           elif [ "${{ github.event.inputs.image }}" = "saleor" ]; then
@@ -113,4 +139,3 @@ jobs:
           elif [ "${{ github.event.inputs.image }}" = "saleor" ]; then
             curl "${{ secrets.SALEOR_BETA_API_DEPLOY_HOOK_RENDER }}"
           fi
-

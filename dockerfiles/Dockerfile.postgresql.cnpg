@@ -1,0 +1,35 @@
+# syntax=docker/dockerfile:1.7
+FROM cgr.dev/chainguard/wolfi-base:latest
+
+ARG PG_MAJOR=17
+ARG EXTRA_PACKAGES=""
+
+# CNPG-compatible PostgreSQL image:
+# - required PostgreSQL binaries in PATH
+# - locale configured
+# - runtime user/group on UID/GID 26
+RUN apk update && \
+    apk upgrade --no-cache && \
+    apk add --no-cache \
+      "postgresql-${PG_MAJOR}" \
+      "postgresql-${PG_MAJOR}-client" \
+      glibc-locale-en \
+      glibc-locale-posix \
+      ${EXTRA_PACKAGES} && \
+    if ! id -u postgres >/dev/null 2>&1; then \
+      adduser -S -D -H -u 26 -G tape -s /bin/sh postgres; \
+    fi && \
+    sed -i 's/^tape:x:26:.*/postgres:x:26:postgres/' /etc/group && \
+    mkdir -p /var/lib/postgresql /home/postgres "/usr/lib/postgresql/${PG_MAJOR}/bin" && \
+    chown -R 26:26 /var/lib/postgresql /home/postgres && \
+    for b in initdb postgres pg_ctl pg_controldata pg_basebackup; do \
+      ln -sf "/usr/bin/${b}" "/usr/lib/postgresql/${PG_MAJOR}/bin/${b}"; \
+    done
+
+ENV LANG=en_US.utf8 \
+    LC_ALL=en_US.utf8 \
+    PGDATA=/var/lib/postgresql/data \
+    PATH="/usr/lib/postgresql/${PG_MAJOR}/bin:/usr/bin:/usr/sbin:/sbin:/bin"
+
+USER 26:26
+WORKDIR /var/lib/postgresql
