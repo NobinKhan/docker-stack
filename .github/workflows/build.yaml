@@ -18,7 +18,7 @@ on:
       postgres_major:
         description: "Postgres major version for postgres-cnpg build"
         required: true
-        default: "17"
+        default: "18"
         type: string
       version:
         description: "Select Docker Image Version"

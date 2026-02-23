@@ -1,27 +1,46 @@
 # syntax=docker/dockerfile:1.7
 FROM cgr.dev/chainguard/wolfi-base:latest
 
-ARG PG_MAJOR=17
+ARG PG_MAJOR=18
 ARG EXTRA_PACKAGES=""
+ARG BARMAN_VERSION=3.17.0
 
 # CNPG-compatible PostgreSQL image:
 # - required PostgreSQL binaries in PATH
 # - locale configured
 # - runtime user/group on UID/GID 26
+# - barman-cloud and missing extensions
 RUN apk update && \
     apk upgrade --no-cache && \
     apk add --no-cache \
       "postgresql-${PG_MAJOR}" \
       "postgresql-${PG_MAJOR}-client" \
+      "postgresql-${PG_MAJOR}-contrib" \
       glibc-locale-en \
       glibc-locale-posix \
+      python-3 \
+      py3-pip \
       ${EXTRA_PACKAGES} && \
+    # Install build dependencies for Barman and psycopg2
+    apk add --no-cache --virtual .build-deps \
+      build-base \
+      python-3-dev \
+      "postgresql-${PG_MAJOR}-dev" && \
+    # Install barman-cloud and requirements
+    pip install --break-system-packages --no-cache-dir \
+      "barman[cloud,azure,snappy,google,zstandard,lz4]==${BARMAN_VERSION}" \
+      psycopg2-binary && \
+    # Remove build dependencies to keep the image small
+    apk del .build-deps && \
+    # Set up user and group
     if ! id -u postgres >/dev/null 2>&1; then \
       adduser -S -D -H -u 26 -G tape -s /bin/sh postgres; \
     fi && \
     sed -i 's/^tape:x:26:.*/postgres:x:26:postgres/' /etc/group && \
+    # Setup directories
     mkdir -p /var/lib/postgresql /home/postgres "/usr/lib/postgresql/${PG_MAJOR}/bin" && \
     chown -R 26:26 /var/lib/postgresql /home/postgres && \
+    # Setup symlinks for CNPG compatibility
     for b in initdb postgres pg_ctl pg_controldata pg_basebackup; do \
       ln -sf "/usr/bin/${b}" "/usr/lib/postgresql/${PG_MAJOR}/bin/${b}"; \
     done
