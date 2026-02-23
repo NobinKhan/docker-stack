@@ -76,6 +76,7 @@ jobs:
             echo "image_short_name=postgres" >> $GITHUB_OUTPUT
           elif [ "${{ github.event.inputs.image }}" = "postgres-cnpg" ]; then
             docker build \
+              --provenance=false \
               --build-arg PG_MAJOR=${{ github.event.inputs.postgres_major }} \
               --platform linux/amd64 \
               --target system \
@@ -105,8 +106,8 @@ jobs:
             docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.extract-version.outputs.image_short_name }}:latest
 
           elif [ "${{ github.event.inputs.image }}" = "postgres-cnpg" ]; then
-            docker build --build-arg PG_MAJOR=${{ github.event.inputs.postgres_major }} --platform linux/amd64 --target minimal -t local/postgres-cnpg:minimal -f dockerfiles/Dockerfile.postgresql.cnpg .
-            docker build --build-arg PG_MAJOR=${{ github.event.inputs.postgres_major }} --platform linux/amd64 --target standard -t local/postgres-cnpg:standard -f dockerfiles/Dockerfile.postgresql.cnpg .
+            docker build --provenance=false --build-arg PG_MAJOR=${{ github.event.inputs.postgres_major }} --platform linux/amd64 --target minimal -t local/postgres-cnpg:minimal -f dockerfiles/Dockerfile.postgresql.cnpg .
+            docker build --provenance=false --build-arg PG_MAJOR=${{ github.event.inputs.postgres_major }} --platform linux/amd64 --target standard -t local/postgres-cnpg:standard -f dockerfiles/Dockerfile.postgresql.cnpg .
 
             docker tag local/postgres-cnpg:minimal ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.extract-version.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}-minimal-wolfi-cnpg
             docker tag local/postgres-cnpg:minimal ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.extract-version.outputs.image_short_name }}:minimal-latest
