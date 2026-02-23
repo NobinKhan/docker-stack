@@ -104,14 +104,14 @@ jobs:
             docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.extract-version.outputs.image_short_name }}:latest
 
           elif [ "${{ github.event.inputs.image }}" = "postgres-cnpg" ]; then
-            docker tag local/postgres-cnpg:build ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.extract-version.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}-chainguard-cnpg
+            docker tag local/postgres-cnpg:build ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.extract-version.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}-wolfi-cnpg
             docker tag local/postgres-cnpg:build ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.extract-version.outputs.image_short_name }}:latest
-            docker tag local/postgres-cnpg:build ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.extract-version.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}-chainguard-cnpg
+            docker tag local/postgres-cnpg:build ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.extract-version.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}-wolfi-cnpg
             docker tag local/postgres-cnpg:build ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.extract-version.outputs.image_short_name }}:latest
 
-            docker push ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.extract-version.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}-chainguard-cnpg
+            docker push ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.extract-version.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}-wolfi-cnpg
             docker push ${{ env.GITHUB_IMAGE_REGISTRY }}/${{ env.GITHUB_IMAGE_NAME }}/${{ steps.extract-version.outputs.image_short_name }}:latest
-            docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.extract-version.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}-chainguard-cnpg
+            docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.extract-version.outputs.image_short_name }}:${{ steps.extract-version.outputs.version }}-wolfi-cnpg
             docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.extract-version.outputs.image_short_name }}:latest
 
           elif [ "${{ github.event.inputs.image }}" = "saleor" ]; then

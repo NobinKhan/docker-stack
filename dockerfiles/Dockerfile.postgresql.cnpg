@@ -1,60 +1,98 @@
 # syntax=docker/dockerfile:1.7
-FROM cgr.dev/chainguard/wolfi-base:latest
+ARG BASE=cgr.dev/chainguard/wolfi-base:latest
+
+FROM ${BASE} AS minimal
 
 ARG PG_MAJOR=18
-ARG EXTRA_PACKAGES=""
-ARG BARMAN_VERSION=3.17.0
 
-# CNPG-compatible PostgreSQL image:
-# - required PostgreSQL binaries in PATH
-# - locale configured
-# - runtime user/group on UID/GID 26
-# - barman-cloud and missing extensions
-RUN apk update && \
-    apk upgrade --no-cache && \
-    apk add --no-cache \
+ENV PATH="/usr/lib/postgresql/${PG_MAJOR}/bin:/usr/bin:/usr/sbin:/sbin:/bin" \
+    PGDATA=/var/lib/postgresql/data \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8
+
+RUN apk add --no-cache \
       "postgresql-${PG_MAJOR}" \
-      "postgresql-${PG_MAJOR}-client" \
-      "postgresql-${PG_MAJOR}-contrib" \
-      glibc-locale-en \
-      glibc-locale-posix \
-      python-3 \
-      py3-pip \
-      bash \
-      gnutar \
-      coreutils \
-      findutils \
-      jq \
-      curl \
-      ${EXTRA_PACKAGES} && \
-    # Install build dependencies for Barman and psycopg2
-    apk add --no-cache --virtual .build-deps \
-      build-base \
-      python-3-dev \
-      "postgresql-${PG_MAJOR}-dev" && \
-    # Install barman-cloud and requirements
-    pip install --break-system-packages --no-cache-dir \
-      "barman[cloud,azure,snappy,google,zstandard,lz4]==${BARMAN_VERSION}" \
-      psycopg2-binary && \
-    # Remove build dependencies to keep the image small
-    apk del .build-deps && \
-    # Set up user and group
+      "postgresql-${PG_MAJOR}-client" && \
     if ! id -u postgres >/dev/null 2>&1; then \
       adduser -S -D -H -u 26 -G tape -s /bin/sh postgres; \
     fi && \
-    sed -i 's/^tape:x:26:.*/postgres:x:26:postgres/' /etc/group && \
-    # Setup directories
-    mkdir -p /var/lib/postgresql /home/postgres "/usr/lib/postgresql/${PG_MAJOR}/bin" && \
-    chown -R 26:26 /var/lib/postgresql /home/postgres && \
-    # Setup symlinks for CNPG compatibility
+    test "$(id -u postgres)" = "26" && \
+    test "$(id -g postgres)" = "26" && \
+    mkdir -p /home/postgres /var/lib/postgresql "/usr/lib/postgresql/${PG_MAJOR}/bin" && \
+    chown -R 26:26 /home/postgres /var/lib/postgresql && \
     for b in /usr/libexec/postgresql${PG_MAJOR}/*; do \
-      ln -sf "${b}" "/usr/lib/postgresql/${PG_MAJOR}/bin/$(basename ${b})"; \
+      ln -sf "${b}" "/usr/lib/postgresql/${PG_MAJOR}/bin/$(basename "${b}")"; \
     done
 
-ENV LANG=en_US.utf8 \
-    LC_ALL=en_US.utf8 \
-    PGDATA=/var/lib/postgresql/data \
-    PATH="/usr/lib/postgresql/${PG_MAJOR}/bin:/usr/bin:/usr/sbin:/sbin:/bin"
+RUN cat > /usr/bin/locale <<'EOF'
+#!/bin/sh
+if [ "$1" = "-a" ]; then
+  if [ -d /usr/lib/locale ]; then
+    for d in /usr/lib/locale/*; do
+      [ -d "$d" ] || continue
+      basename "$d"
+    done | sort
+  fi
+  exit 0
+fi
+if [ "$1" = "charmap" ]; then
+  printf "UTF-8\n"
+  exit 0
+fi
+if [ $# -eq 0 ]; then
+  [ -n "$LANG" ] && echo "LANG=$LANG"
+  [ -n "$LC_ALL" ] && echo "LC_ALL=$LC_ALL"
+  exit 0
+fi
+echo "unsupported locale options" >&2
+exit 1
+EOF
+RUN chmod 0755 /usr/bin/locale
 
 USER 26:26
 WORKDIR /var/lib/postgresql
+
+FROM minimal AS standard
+
+ARG PG_MAJOR=18
+ARG EXTENSIONS=""
+ARG STANDARD_ADDITIONAL_PACKAGES=""
+
+USER root
+RUN apk add --no-cache \
+      glibc-locale-en \
+      glibc-locale-posix \
+      ${STANDARD_ADDITIONAL_PACKAGES} \
+      ${EXTENSIONS}
+
+ENV LANG=en_US.utf8 \
+    LC_ALL=en_US.utf8
+
+USER 26:26
+WORKDIR /var/lib/postgresql
+
+FROM standard AS system
+
+ARG BARMAN_VERSION=3.17.0
+
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
+
+USER root
+RUN apk add --no-cache \
+      python-3 \
+      py3-pip \
+      py3-psycopg2 \
+      py3-setuptools && \
+    apk add --no-cache --virtual .build-deps \
+      build-base \
+      python-3-dev && \
+    pip3 install --no-cache-dir "barman[cloud,azure,snappy,google,zstandard,lz4]==${BARMAN_VERSION}" && \
+    python3 -c "import sysconfig, compileall; compileall.compile_dir(sysconfig.get_path('stdlib'), quiet=1); compileall.compile_dir(sysconfig.get_path('purelib'), quiet=1); compileall.compile_dir(sysconfig.get_path('platlib'), quiet=1)" && \
+    apk del .build-deps && \
+    rm -rf /root/.cache /var/cache/apk/*
+
+USER 26:26
+WORKDIR /var/lib/postgresql
+
+# Keep the default output stage aligned with previous behavior (Postgres + Barman tools).
+FROM system AS final
