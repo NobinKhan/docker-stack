@@ -20,6 +20,12 @@ RUN apk update && \
       glibc-locale-posix \
       python-3 \
       py3-pip \
+      bash \
+      gnutar \
+      coreutils \
+      findutils \
+      jq \
+      curl \
       ${EXTRA_PACKAGES} && \
     # Install build dependencies for Barman and psycopg2
     apk add --no-cache --virtual .build-deps \
@@ -41,8 +47,8 @@ RUN apk update && \
     mkdir -p /var/lib/postgresql /home/postgres "/usr/lib/postgresql/${PG_MAJOR}/bin" && \
     chown -R 26:26 /var/lib/postgresql /home/postgres && \
     # Setup symlinks for CNPG compatibility
-    for b in initdb postgres pg_ctl pg_controldata pg_basebackup; do \
-      ln -sf "/usr/bin/${b}" "/usr/lib/postgresql/${PG_MAJOR}/bin/${b}"; \
+    for b in /usr/libexec/postgresql${PG_MAJOR}/*; do \
+      ln -sf "${b}" "/usr/lib/postgresql/${PG_MAJOR}/bin/$(basename ${b})"; \
     done
 
 ENV LANG=en_US.utf8 \
